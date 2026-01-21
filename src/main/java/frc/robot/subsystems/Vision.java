@@ -42,8 +42,7 @@ import swervelib.telemetry.SwerveDriveTelemetry;
 public class Vision
 {
 
-  public static final AprilTagFieldLayout fieldLayout = AprilTagFieldLayout.loadField(
-      AprilTagFields.k2025ReefscapeAndyMark);
+  public static AprilTagFieldLayout fieldLayout = null;
   // Cam mounted facing forward, half a meter forward of center, half a meter up from center.
   //public static final Transform3d kRobotToCam = new Transform3d(new Translation3d(0.5, 0.0, 0.5), new Rotation3d(0, 0, 0));
   /**
@@ -72,6 +71,7 @@ public class Vision
   {
     this.currentPose = currentPose;
     this.field2d = field;
+   fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark);
   }
      
   /**
