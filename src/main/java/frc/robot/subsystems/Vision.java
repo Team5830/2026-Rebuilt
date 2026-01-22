@@ -30,10 +30,17 @@ import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.PhotonUtils;
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 import swervelib.SwerveDrive;
 import swervelib.telemetry.SwerveDriveTelemetry;
+import frc.robot.Robot;
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.SimCameraProperties;
+import org.photonvision.simulation.VisionSystemSim;
+import edu.wpi.first.math.geometry.Rotation2d;
 
 /**
  * Example PhotonVision class to aid in the pursuit of accurate odometry. Taken from
@@ -62,6 +69,11 @@ public class Vision
    * Field from {@link swervelib.SwerveDrive#field}
    */
   private             Field2d             field2d;
+
+  // Simulation
+    private PhotonCameraSim cameraSim;
+    private VisionSystemSim visionSim;
+
   /**
    * Constructor for the Vision class.
    *
@@ -72,6 +84,40 @@ public class Vision
   {
     this.currentPose = currentPose;
     this.field2d = field;
+    // ----- Simulation
+    if (Robot.isSimulation()) {
+        // Create the vision system simulation which handles cameras and targets on the field.
+        visionSim = new VisionSystemSim("main");
+        // Add all the AprilTags inside the tag layout as visible targets to this simulated field.
+        visionSim.addAprilTags(fieldLayout);
+        // Create simulated camera properties. These can be set to mimic your actual camera.
+        
+        // Create a PhotonCameraSim which will update the linked PhotonCamera's values with visible
+        // targets.
+        for (Cameras camera : Cameras.values())
+          {
+          cameraSim = new PhotonCameraSim(camera.camera, camera.cameraProp);
+          // Add the simulated camera to view the targets on this simulated field.
+          visionSim.addCamera(cameraSim, camera.robotToCamTransform);
+
+          cameraSim.enableDrawWireframe(true);
+          }
+    }
+  }
+    
+  /** A Field2d for visualizing our robot and objects on the field. */
+  public Field2d getSimDebugField() {
+    if (!Robot.isSimulation()) return null;
+    return visionSim.getDebugField();
+  }
+  
+  public void simulationPeriodic(Pose2d robotSimPose) {
+    visionSim.update(robotSimPose);
+  }
+
+  /** Reset pose history of the robot in the vision system simulation. */
+  public void resetSimPose(Pose2d pose) {
+      if (Robot.isSimulation()) visionSim.resetRobotPose(pose);
   }
      
   /**
@@ -116,6 +162,16 @@ public class Vision
     for (Cameras camera : Cameras.values())
     {
       Optional<EstimatedRobotPose> poseEst = getEstimatedGlobalPose(camera);
+      if (Robot.isSimulation()) {
+        poseEst.ifPresentOrElse(
+                est ->
+                        getSimDebugField()
+                                .getObject("VisionEstimation")
+                                .setPose(est.estimatedPose.toPose2d()),
+                () -> {
+                    getSimDebugField().getObject("VisionEstimation").setPoses();
+                });
+    }
       if (poseEst.isPresent())
       {
         var pose = poseEst.get();
@@ -144,7 +200,6 @@ public class Vision
     return poseEst;
     
   }
-
 
   /**
    * Get distance of the robot from the AprilTag pose.
@@ -282,6 +337,7 @@ public class Vision
      * Results list to be updated periodically and cached to avoid unnecessary queries.
      */
     public        List<PhotonPipelineResult>   resultsList       = new ArrayList<>();
+    private final SimCameraProperties cameraProp;
     /**
      * Last read from the camera timestamp to prevent lag due to slow data fetches.
      */
@@ -314,6 +370,12 @@ public class Vision
 
       this.singleTagStdDevs = singleTagStdDevs;
       this.multiTagStdDevs = multiTagStdDevsMatrix;
+            cameraProp = new SimCameraProperties();
+      cameraProp.setCalibration(960, 720, Rotation2d.fromDegrees(90));
+      cameraProp.setCalibError(0.35, 0.10);
+      cameraProp.setFPS(15);
+      cameraProp.setAvgLatencyMs(50);
+      cameraProp.setLatencyStdDevMs(15);
     }
 
     /**

@@ -64,6 +64,7 @@ import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 import edu.wpi.first.math.geometry.Transform3d;
 
+
 public class SwerveSubsystem extends SubsystemBase
 {
   /**
@@ -142,10 +143,10 @@ public class SwerveSubsystem extends SubsystemBase
 
       if (visionDriveTest && !RobotBase.isSimulation())
       {
-        setupPhotonVision();
         // Stop the odometry thread if we are using vision that way we can synchronize updates better.
         swerveDrive.stopOdometryThread();
       }
+      setupPhotonVision();
       setupPathPlanner();
     } catch (Exception e)
     {
@@ -178,6 +179,14 @@ public class SwerveSubsystem extends SubsystemBase
   @Override
   public void simulationPeriodic()
   {
+        // Update drivetrain simulation
+    //drivetrain.simulationPeriodic();
+
+    // Update camera simulation
+    vision.simulationPeriodic(swerveDrive.getPose());
+
+    var debugField = vision.getSimDebugField();
+    debugField.getObject("EstimatedRobot").setPose(swerveDrive.getPose());
   }
 
   /**
