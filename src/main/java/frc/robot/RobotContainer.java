@@ -5,7 +5,8 @@
 package frc.robot;
 
 import frc.robot.commands.Autos;
-import frc.robot.subsystems.SwerveSubsystem;
+import frc.robot.subsystems.*;
+import frc.robot.commands.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -15,7 +16,16 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+
 import java.io.File;
+
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 
 
 /**
@@ -28,10 +38,24 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private SwerveSubsystem m_swerveDrive;
   private CommandXboxController joystick1;
+  final SendableChooser<Command> autoChooser;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     m_swerveDrive =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
+    NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive));
+    // Autochooser must be setup after the named commands
+    autoChooser = AutoBuilder.buildAutoChooser("Auto1");
+    autoChooser.onChange((selectedOption) -> {
+      // This code will be executed whenever the selected option changes
+      PathPlannerAuto AutoPath = new PathPlannerAuto(selectedOption);
+      //m_swerveDrive.resetOdometry(AutoPath.getStartingPose());
+      m_swerveDrive.resetOdometry(new Pose2d(0.7,7.3,Rotation2d.fromDegrees(0)));
+      System.out.println("Selected option: " + selectedOption);
+
+      // Perform actions based on the selected option
+    });
+
     try {
       joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
     } catch (RuntimeException ex) {
@@ -53,6 +77,10 @@ public class RobotContainer {
         () -> -joystick1.getRawAxis(5),
         () -> joystick1.getRawAxis(4)
       );
+     m_swerveDrive.setDefaultCommand(
+      !RobotBase.isSimulation() ? driveRobotOriented: driveFieldOrientedDirectAngle);
+    SmartDashboard.putData("Auto Chooser", autoChooser);
+    SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerveDrive));
     // Configure the trigger bindings
     configureBindings();
   }
@@ -75,8 +103,14 @@ public class RobotContainer {
    *
    * @return the command to run in autonomous
    */
+
   public Command getAutonomousCommand() {
-    // An example command will be run in autonomous
-    return Autos.exampleAuto(m_swerveDrive);
+
+    Command selected = autoChooser.getSelected();
+    String autoName = autoChooser.getSelected().getName();
+    PathPlannerAuto AutoPath = new PathPlannerAuto(autoName);
+    m_swerveDrive.resetOdometry(AutoPath.getStartingPose());
+    return selected;
+    
   }
 }

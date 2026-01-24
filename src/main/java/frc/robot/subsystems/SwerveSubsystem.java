@@ -284,6 +284,22 @@ public class SwerveSubsystem extends SubsystemBase
     });
   }
 
+  public Command aimAtHub()
+  {
+    int targetTag = 26;
+    if (isRedAlliance()){
+      targetTag = 10;
+    }
+    Pose2d tagpose = GetTagPose(targetTag);
+    Pose2d robotpose = getPose();
+    Transform2d transform = tagpose.minus(robotpose);
+    double degreesToTurn = transform.getRotation().getDegrees();
+    System.out.println("Turn Degrees "+degreesToTurn);
+    //return command
+    
+    return driveToPose( new Pose2d(robotpose.getX(),robotpose.getY(), Rotation2d.fromDegrees(degreesToTurn)));
+  }
+
   /**
    * Get the path follower with events.
    *
@@ -300,7 +316,6 @@ public class SwerveSubsystem extends SubsystemBase
     var ret = GetTargetTag();
   }
 
-
   public Pose2d GetTargetTag(){
     PhotonPipelineResult results = Cameras.FRONT_CAM.camera.getLatestResult();
       if (results.hasTargets())
@@ -314,7 +329,13 @@ public class SwerveSubsystem extends SubsystemBase
         return swerveDrive.getPose();
     }
     
+  public Pose2d GetTagPose(int tag){
     
+    var tagPose = aprilTagFieldLayout.getTagPose(tag);
+    return tagPose.get().toPose2d();  
+    }
+    
+
   public PhotonPipelineResult GetTagResults(){
     PhotonPipelineResult result = Cameras.FRONT_CAM.camera.getLatestResult();
     if(result.hasTargets()){
