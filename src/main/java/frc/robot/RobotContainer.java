@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import frc.robot.commands.Autos;
 import frc.robot.subsystems.*;
 import frc.robot.commands.*;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -16,11 +15,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
-
 import java.io.File;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -39,11 +35,18 @@ public class RobotContainer {
   private SwerveSubsystem m_swerveDrive;
   private CommandXboxController joystick1;
   final SendableChooser<Command> autoChooser;
+  final SendableChooser<Boolean> driveChooser= new SendableChooser<>();
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     m_swerveDrive =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
-    NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive));
+    NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive, joystick1));
+    driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
+    driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
+    driveChooser.onChange((selectedOption)->{
+      m_swerveDrive.driveField = selectedOption;
+      System.out.println("field drive value"+selectedOption);
+    });
     // Autochooser must be setup after the named commands
     autoChooser = AutoBuilder.buildAutoChooser("Auto1");
     autoChooser.onChange((selectedOption) -> {
@@ -54,33 +57,31 @@ public class RobotContainer {
       System.out.println("Selected option: " + selectedOption);
 
       // Perform actions based on the selected option
-    });
+      });
 
     try {
       joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
     } catch (RuntimeException ex) {
       DriverStation.reportError("Error instantiating Xboxcontroller1: " + ex.getMessage(), true);
     }
-    Command driveRobotOriented = m_swerveDrive.driveRobotRelative(
-      () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND),
-      () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND),
-      () -> -joystick1.getRawAxis(4));
 
-     Command driveFieldOrientedDirectAngle = m_swerveDrive.driveCommand(
-        () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND),
-        () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND),
-        () -> MathUtil.applyDeadband(-joystick1.getRawAxis(5), .01));
 
-      Command driveFieldOrientedDirectAngleSim = m_swerveDrive.simDriveCommand(
-        () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND),
-        () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND),
-        () -> -joystick1.getRawAxis(5),
-        () -> joystick1.getRawAxis(4)
+    
+    Command oneDrive = m_swerveDrive.oneDriveCommand(
+      () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND), // X
+      () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND), // Y 
+      () -> -joystick1.getRawAxis(4),                                                               // Angle 1
+      () -> -joystick1.getRawAxis(5)                                                              // Angle 2
       );
-     m_swerveDrive.setDefaultCommand(
-      !RobotBase.isSimulation() ? driveRobotOriented: driveFieldOrientedDirectAngle);
+
+      /* -> driveCommand can take a single value for rotation or two for the specific target angle -> so take angle and pass cos(theta), sin(theta)
+        Might also need to turn on heading correct
+        Call just one drive command here, split options in servedrive.
+      */
+    m_swerveDrive.setDefaultCommand(oneDrive);
     SmartDashboard.putData("Auto Chooser", autoChooser);
-    SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerveDrive));
+    SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerveDrive, joystick1));
+    SmartDashboard.putData("drive",driveChooser);
     // Configure the trigger bindings
     configureBindings();
   }
@@ -95,7 +96,7 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    
+    joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1));
   }
 
   /**
