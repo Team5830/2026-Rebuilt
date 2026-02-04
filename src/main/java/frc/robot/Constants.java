@@ -80,6 +80,10 @@ public final class Constants {
         AutoAlign.kRotationPID
     );
   }
+  public static final class intake {
+    public static final int motor1ID = 12;
+    public static final int motor2ID = 13;
+  }
   public static final class vision {
     // Constants such as camera and target height stored. Change per robot and goal!
     public static final double CAMERA_HEIGHT_METERS = Units.inchesToMeters(22);
