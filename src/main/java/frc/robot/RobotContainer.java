@@ -71,7 +71,7 @@ public class RobotContainer {
       () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND), // X
       () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND), // Y 
       () -> -joystick1.getRawAxis(4),                                                               // Angle 1
-      () -> -joystick1.getRawAxis(5)                                                              // Angle 2
+      () -> -joystick1.getRawAxis(5)                                                                // Angle 2
       );
 
       /* -> driveCommand can take a single value for rotation or two for the specific target angle -> so take angle and pass cos(theta), sin(theta)

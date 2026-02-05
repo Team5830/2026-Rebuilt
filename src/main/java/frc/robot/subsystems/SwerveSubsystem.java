@@ -86,7 +86,7 @@ public class SwerveSubsystem extends SubsystemBase
    */
   private       Vision              vision;
   public boolean driveField = false;
-  
+  private boolean brakeOn = false;
   /**
    * Initialize {@link SwerveDrive} with the directory provided.
    *
@@ -672,109 +672,7 @@ public class SwerveSubsystem extends SubsystemBase
       });
   }
 
-  public Command oneDrive2( DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier rotation1, DoubleSupplier rotation2)
-  {
-    Translation2d scaledInputs = SwerveMath.scaleTranslation(new Translation2d(translationX.getAsDouble(),
-                                                                                 translationY.getAsDouble()), 0.8);
-    //double fieldAngle = swerveDrive.swerveController.getJoystickAngle(rotation1.getAsDouble(), rotation2.getAsDouble()) + ( (angleControlled) ? targetAngleRadians : 0.0); 
-    double defaultAngle = swerveDrive.swerveController.lastAngleScalar;
-   
-    double angle =
-        swerveDrive.swerveController.withinHypotDeadband(rotation1.getAsDouble(), rotation2.getAsDouble()) ? defaultAngle : Math.atan2(rotation1.getAsDouble(), rotation2.getAsDouble());
-    //ChassisSpeeds speeds = getTargetSpeeds(xInput, yInput, angle, currentHeadingAngleRadians, maxSpeed);
 
-    // Used for the position hold feature
-    //swerveDrive.swerveController.lastAngleScalar = angle;
-
-    /* 
-    getTargetSpeeds(
-      double xInput, double yInput, double angle, double currentHeadingAngleRadians, double maxSpeed)
-    */
-    return run(() -> {
-    swerveDrive.driveFieldOriented(
-              swerveDrive.swerveController.getTargetSpeeds(
-                scaledInputs.getX(), 
-                scaledInputs.getY(), 
-                angle,
-                swerveDrive.getOdometryHeading().getRadians(),
-                swerveDrive.getMaximumChassisVelocity()));
-      });
-    //return driveCommand( translationX, translationY, rotation1, rotation2); //Field oriented Drive 
-    /* 
-    Translation2d scaledInputs = SwerveMath.scaleTranslation(new Translation2d(translationX.getAsDouble(),
-                                                                                 translationY.getAsDouble()), 0.8);
-
-    return run(() -> {
-            swerveDrive.driveFieldOriented(
-              swerveDrive.swerveController.getTargetSpeeds(
-                scaledInputs.getX(), 
-                scaledInputs.getY(), 
-                (angleControlled) ? Math.cos(targetAngleRadians) : rotation1.getAsDouble(), 
-                (angleControlled) ? Math.sin(targetAngleRadians) : rotation2.getAsDouble(),
-                swerveDrive.getOdometryHeading().getRadians(),
-                swerveDrive.getMaximumChassisVelocity()));
-          });*/
-    /* 
-    if (driveField){
-      Translation2d scaledInputs = SwerveMath.scaleTranslation(new Translation2d(translationX.getAsDouble(),
-                                                                                 translationY.getAsDouble()), 1.0);
-      if (angleControlled){
-        return run(() -> {
-          swerveDrive.driveFieldOriented(
-            swerveDrive.swerveController.getTargetSpeeds(
-              scaledInputs.getX(), 
-              scaledInputs.getY(), 
-              Math.cos(targetAngleRadians), 
-              Math.sin(targetAngleRadians),
-              swerveDrive.getOdometryHeading().getRadians(),
-              swerveDrive.getMaximumChassisVelocity()));
-        });
-      }else{ 
-        return run(() -> {
-            swerveDrive.driveFieldOriented(
-              swerveDrive.swerveController.getTargetSpeeds(
-                scaledInputs.getX(), 
-                scaledInputs.getY(), 
-                rotation1.getAsDouble(), 
-                rotation2.getAsDouble(),
-                swerveDrive.getOdometryHeading().getRadians(),
-                swerveDrive.getMaximumChassisVelocity()));
-          });
-      //}
-    }else{
-      return run(() -> {
-        // Make the robot move
-        swerveDrive.drive(SwerveMath.scaleTranslation(new Translation2d(
-              translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
-              translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()), 1.0),
-          Math.pow(rotation1.getAsDouble(), 3) * swerveDrive.getMaximumChassisAngularVelocity(),
-          false,
-          false);
-      });
-    }
-    
-    */
-    /* 
-    if (driveField){
-      System.out.println("Field Oriented Drive");
-      if (angleControlled){
-        System.out.println("Using target angle: "+targetAngleRadians);
-        return driveCommand( translationX, translationY, ()->Math.cos(targetAngleRadians), ()->Math.sin(targetAngleRadians));
-      }else{  
-        return driveCommand( translationX, translationY, rotation1, rotation2);
-      }
-    }else{
-    System.out.println("Robot Oriented Drive");
-      if (angleControlled){
-        //Driver only controlling translation, angle set by targeting command
-        System.out.println("Using target angle: "+targetAngleRadians);
-        return driveCommand( ()->0, ()->0, ()->Math.cos(targetAngleRadians), ()->Math.sin(targetAngleRadians));
-      }
-      //Drive Controlling Anglular rotation rate instead of angle
-      return driveRobotRelative( translationX, translationY, rotation1);
-    } 
-    */
-  }
   /**
    * Get the swerve drive kinematics object.
    *
@@ -869,9 +767,13 @@ public class SwerveSubsystem extends SubsystemBase
    *
    * @param brake True to set motors to brake mode, false for coast.
    */
-  public void setMotorBrake(boolean brake)
-  {
-    swerveDrive.setMotorIdleMode(brake);
+  public void setMotorBrake()
+  { 
+    swerveDrive.setMotorIdleMode(!brakeOn); //Set Brake mode on motors
+    brakeOn = !brakeOn;
+    if (brakeOn) {
+      lock();  //Locks wheels so won't move
+    }
   }
 
   /**
@@ -883,6 +785,12 @@ public class SwerveSubsystem extends SubsystemBase
   public Rotation2d getHeading()
   {
     return getPose().getRotation();
+  }
+
+
+  /* Return distance to tag based on odometry and AprilTag map */
+  public double getDistanceToTag( int tag){
+    return vision.getDistanceFromAprilTag(tag);
   }
 
   /**
