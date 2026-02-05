@@ -19,6 +19,7 @@ import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -48,6 +49,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import org.json.simple.parser.ParseException;
@@ -63,6 +65,7 @@ import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 import edu.wpi.first.math.geometry.Transform3d;
+
 
 public class SwerveSubsystem extends SubsystemBase
 {
@@ -82,13 +85,8 @@ public class SwerveSubsystem extends SubsystemBase
    * PhotonVision class to keep an accurate odometry.
    */
   private       Vision              vision;
-  public Boolean ElevatorUp = false;
-  /*
-  private final Translation2d m_frontLeftLocation = new Translation2d(0.438, 0.438);
-  private final Translation2d m_frontRightLocation = new Translation2d(0.438, -0.438);
-  private final Translation2d m_backLeftLocation = new Translation2d(-0.438, 0.438);
-  private final Translation2d m_backRightLocation = new Translation2d(-0.438, -0.438);
- */
+  public boolean driveField = false;
+  
   /**
    * Initialize {@link SwerveDrive} with the directory provided.
    *
@@ -99,7 +97,7 @@ public class SwerveSubsystem extends SubsystemBase
     // Angle conversion factor is 360 / (GEAR RATIO * ENCODER RESOLUTION)
     //  In this case the gear ratio is 12.8 motor revolutions per wheel rotation.
     //  The encoder resolution per motor revolution is 1 per motor revolution.
-    aprilTagFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark);
+    aprilTagFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
     double angleConversionFactor = SwerveMath.calculateDegreesPerSteeringRotation(Constants.DriveTrain.angleGearRatio);
     // Motor conversion factor is (PI * WHEEL DIAMETER IN METERS) / (GEAR RATIO * ENCODER RESOLUTION).
     //  In this case the wheel diameter is 4 inches, which must be converted to meters to get meters/second.
@@ -112,17 +110,12 @@ public class SwerveSubsystem extends SubsystemBase
     System.out.println("}");
     System.out.println("Directory: "+directory);
     
-
-
     // Configure the Telemetry before creating the SwerveDrive to avoid unnecessary objects being created.
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     try
     {
       swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.DriveTrain.maxSpeed,
-      new Pose2d(new Translation2d(Meter.of(
-        5.6),
-      Meter.of(5.9)),
-      Rotation2d.fromDegrees(-125.6)));
+      new Pose2d(new Translation2d(Meter.of(0.7), Meter.of(7.3)), Rotation2d.fromDegrees(0)));
       // Alternative method if you don't want to supply the conversion factor via JSON files.
       // swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed, angleConversionFactor, driveConversionFactor);
     } catch (Exception e)
@@ -139,13 +132,13 @@ public class SwerveSubsystem extends SubsystemBase
                                                 0.1); //Correct for skew that gets worse as angular velocity increases. Start with a coefficient of 0.1.
       swerveDrive.setModuleEncoderAutoSynchronize(false,
                                                   1); // Enable if you want to resynchronize your absolute encoders and motor encoders periodically when they are not moving.
-
+      
       if (visionDriveTest && !RobotBase.isSimulation())
       {
-        setupPhotonVision();
         // Stop the odometry thread if we are using vision that way we can synchronize updates better.
         swerveDrive.stopOdometryThread();
       }
+      setupPhotonVision();
       setupPathPlanner();
     } catch (Exception e)
     {
@@ -171,13 +164,20 @@ public class SwerveSubsystem extends SubsystemBase
     {
       vision.updatePoseEstimation(swerveDrive);
     }
-    ElevatorUp = SmartDashboard.getBoolean("ElevatorUp", false);
-    //testGetTag();
+    //driveFieldOriented = SmartDashboard.getBoolean("driveFieldOriented", false);
   }
 
   @Override
   public void simulationPeriodic()
   {
+        // Update drivetrain simulation
+    //drivetrain.simulationPeriodic();
+
+    // Update camera simulation
+    vision.simulationPeriodic(swerveDrive.getPose());
+
+    var debugField = vision.getSimDebugField();
+    debugField.getObject("EstimatedRobot").setPose(swerveDrive.getPose());
   }
 
   /**
@@ -275,6 +275,22 @@ public class SwerveSubsystem extends SubsystemBase
     });
   }
 
+  public Command aimAtHub()
+  {
+    int targetTag = 26;
+    if (isRedAlliance()){
+      targetTag = 10;
+    }
+    Pose2d tagpose = GetTagPose(targetTag);
+    Pose2d robotpose = getPose();
+    Transform2d transform = tagpose.minus(robotpose);
+    double degreesToTurn = transform.getRotation().getDegrees();
+    System.out.println("Turn Degrees "+degreesToTurn);
+    //return command
+    
+    return driveToPose( new Pose2d(robotpose.getX(),robotpose.getY(), Rotation2d.fromDegrees(degreesToTurn)));
+  }
+
   /**
    * Get the path follower with events.
    *
@@ -286,11 +302,6 @@ public class SwerveSubsystem extends SubsystemBase
     // Create a path following command using AutoBuilder. This will also trigger event markers.
     return new PathPlannerAuto(pathName);
   }
-
-  void testGetTag(){
-    var ret = GetTargetTag();
-  }
-
 
   public Pose2d GetTargetTag(){
     PhotonPipelineResult results = Cameras.FRONT_CAM.camera.getLatestResult();
@@ -305,7 +316,13 @@ public class SwerveSubsystem extends SubsystemBase
         return swerveDrive.getPose();
     }
     
+  public Pose2d GetTagPose(int tag){
     
+    var tagPose = aprilTagFieldLayout.getTagPose(tag);
+    return tagPose.get().toPose2d();  
+    }
+    
+
   public PhotonPipelineResult GetTagResults(){
     PhotonPipelineResult result = Cameras.FRONT_CAM.camera.getLatestResult();
     if(result.hasTargets()){
@@ -476,23 +493,13 @@ public class SwerveSubsystem extends SubsystemBase
   {
     return run(() -> {
       // Make the robot move
-
-      if (ElevatorUp == false) {
       swerveDrive.drive(SwerveMath.scaleTranslation(new Translation2d(
                             translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
                             translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()), 0.8),
                         angularRotationX.getAsDouble() * swerveDrive.getMaximumChassisAngularVelocity(),
                         false,
                         false);
-        }
-      else {
-        swerveDrive.drive(SwerveMath.scaleTranslation(new Translation2d(
-                            translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity()/4,
-                            translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()/4), 0.8),
-                        angularRotationX.getAsDouble() * swerveDrive.getMaximumChassisAngularVelocity()/4,
-                        false,
-                        false);
-      }
+      
     });
  
   }
@@ -531,18 +538,16 @@ public class SwerveSubsystem extends SubsystemBase
                               DoubleSupplier headingY)
   {
     // swerveDrive.setHeadingCorrection(true); // Normally you would want heading correction for this kind of control.
-    return run(() -> {
-
-      Translation2d scaledInputs = SwerveMath.scaleTranslation(new Translation2d(translationX.getAsDouble(),
+        return run(() -> {
+          Translation2d scaledInputs = SwerveMath.scaleTranslation(new Translation2d(translationX.getAsDouble(),
                                                                                  translationY.getAsDouble()), 0.8);
+            driveFieldOriented(swerveDrive.swerveController.getTargetSpeeds(scaledInputs.getX(), scaledInputs.getY(),
+                              headingX.getAsDouble(),
+                              headingY.getAsDouble(),
+                              swerveDrive.getOdometryHeading().getRadians(),
+                              swerveDrive.getMaximumChassisVelocity()));
+        });
 
-      // Make the robot move
-      driveFieldOriented(swerveDrive.swerveController.getTargetSpeeds(scaledInputs.getX(), scaledInputs.getY(),
-                                                                      headingX.getAsDouble(),
-                                                                      headingY.getAsDouble(),
-                                                                      swerveDrive.getOdometryHeading().getRadians(),
-                                                                      swerveDrive.getMaximumChassisVelocity()));
-    });
   }
 
   /**
@@ -621,6 +626,155 @@ public class SwerveSubsystem extends SubsystemBase
     });
   }
 
+ 
+/**
+ * One Drive command to rule them all
+ * Takes both joysticks from xbox controller, for Robot Oriented Drive translates based on X, Y and turns left or right depending on 
+ * rotation2, ignoring rotation1
+ * For Field Oriented X,Y are based on the field and the heading is set based on the angle of the rotation axes
+ * The driveFieldOriented sets the drive method
+ * @param translationX
+ * @param translationY
+ * @param rotation1
+ * @param rotation2
+ * @return
+ */
+  /**
+   * Command to drive the robot using translative values and heading as a setpoint.
+   *
+   * @param translationX Translation in the X direction. Cubed for smoother controls.
+   * @param translationY Translation in the Y direction. Cubed for smoother controls.
+   * @param headingX     Heading X to calculate angle of the joystick.
+   * @param headingY     Heading Y to calculate angle of the joystick.
+   * @return Drive command.
+   */
+  public Command oneDriveCommand(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier headingX,
+                              DoubleSupplier headingY)
+  {
+    return run(() -> {
+
+      Translation2d scaledInputs = SwerveMath.scaleTranslation(new Translation2d(translationX.getAsDouble(),
+                                                                                 translationY.getAsDouble()), 0.8);
+      double defaultAngle = swerveDrive.swerveController.lastAngleScalar;
+      swerveDrive.setHeadingCorrection(false);
+      
+      double angle =  Math.atan2(headingX.getAsDouble(), headingY.getAsDouble());
+      if (swerveDrive.swerveController.withinHypotDeadband(headingX.getAsDouble(), headingY.getAsDouble())){
+         angle = defaultAngle;
+      }
+      
+      // Make the robot move
+      driveFieldOriented(swerveDrive.swerveController.getTargetSpeeds(scaledInputs.getX(), scaledInputs.getY(),
+          angle,
+          swerveDrive.getOdometryHeading().getRadians(),
+          swerveDrive.getMaximumChassisVelocity()));
+      swerveDrive.swerveController.lastAngleScalar = angle; 
+      });
+  }
+
+  public Command oneDrive2( DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier rotation1, DoubleSupplier rotation2)
+  {
+    Translation2d scaledInputs = SwerveMath.scaleTranslation(new Translation2d(translationX.getAsDouble(),
+                                                                                 translationY.getAsDouble()), 0.8);
+    //double fieldAngle = swerveDrive.swerveController.getJoystickAngle(rotation1.getAsDouble(), rotation2.getAsDouble()) + ( (angleControlled) ? targetAngleRadians : 0.0); 
+    double defaultAngle = swerveDrive.swerveController.lastAngleScalar;
+   
+    double angle =
+        swerveDrive.swerveController.withinHypotDeadband(rotation1.getAsDouble(), rotation2.getAsDouble()) ? defaultAngle : Math.atan2(rotation1.getAsDouble(), rotation2.getAsDouble());
+    //ChassisSpeeds speeds = getTargetSpeeds(xInput, yInput, angle, currentHeadingAngleRadians, maxSpeed);
+
+    // Used for the position hold feature
+    //swerveDrive.swerveController.lastAngleScalar = angle;
+
+    /* 
+    getTargetSpeeds(
+      double xInput, double yInput, double angle, double currentHeadingAngleRadians, double maxSpeed)
+    */
+    return run(() -> {
+    swerveDrive.driveFieldOriented(
+              swerveDrive.swerveController.getTargetSpeeds(
+                scaledInputs.getX(), 
+                scaledInputs.getY(), 
+                angle,
+                swerveDrive.getOdometryHeading().getRadians(),
+                swerveDrive.getMaximumChassisVelocity()));
+      });
+    //return driveCommand( translationX, translationY, rotation1, rotation2); //Field oriented Drive 
+    /* 
+    Translation2d scaledInputs = SwerveMath.scaleTranslation(new Translation2d(translationX.getAsDouble(),
+                                                                                 translationY.getAsDouble()), 0.8);
+
+    return run(() -> {
+            swerveDrive.driveFieldOriented(
+              swerveDrive.swerveController.getTargetSpeeds(
+                scaledInputs.getX(), 
+                scaledInputs.getY(), 
+                (angleControlled) ? Math.cos(targetAngleRadians) : rotation1.getAsDouble(), 
+                (angleControlled) ? Math.sin(targetAngleRadians) : rotation2.getAsDouble(),
+                swerveDrive.getOdometryHeading().getRadians(),
+                swerveDrive.getMaximumChassisVelocity()));
+          });*/
+    /* 
+    if (driveField){
+      Translation2d scaledInputs = SwerveMath.scaleTranslation(new Translation2d(translationX.getAsDouble(),
+                                                                                 translationY.getAsDouble()), 1.0);
+      if (angleControlled){
+        return run(() -> {
+          swerveDrive.driveFieldOriented(
+            swerveDrive.swerveController.getTargetSpeeds(
+              scaledInputs.getX(), 
+              scaledInputs.getY(), 
+              Math.cos(targetAngleRadians), 
+              Math.sin(targetAngleRadians),
+              swerveDrive.getOdometryHeading().getRadians(),
+              swerveDrive.getMaximumChassisVelocity()));
+        });
+      }else{ 
+        return run(() -> {
+            swerveDrive.driveFieldOriented(
+              swerveDrive.swerveController.getTargetSpeeds(
+                scaledInputs.getX(), 
+                scaledInputs.getY(), 
+                rotation1.getAsDouble(), 
+                rotation2.getAsDouble(),
+                swerveDrive.getOdometryHeading().getRadians(),
+                swerveDrive.getMaximumChassisVelocity()));
+          });
+      //}
+    }else{
+      return run(() -> {
+        // Make the robot move
+        swerveDrive.drive(SwerveMath.scaleTranslation(new Translation2d(
+              translationX.getAsDouble() * swerveDrive.getMaximumChassisVelocity(),
+              translationY.getAsDouble() * swerveDrive.getMaximumChassisVelocity()), 1.0),
+          Math.pow(rotation1.getAsDouble(), 3) * swerveDrive.getMaximumChassisAngularVelocity(),
+          false,
+          false);
+      });
+    }
+    
+    */
+    /* 
+    if (driveField){
+      System.out.println("Field Oriented Drive");
+      if (angleControlled){
+        System.out.println("Using target angle: "+targetAngleRadians);
+        return driveCommand( translationX, translationY, ()->Math.cos(targetAngleRadians), ()->Math.sin(targetAngleRadians));
+      }else{  
+        return driveCommand( translationX, translationY, rotation1, rotation2);
+      }
+    }else{
+    System.out.println("Robot Oriented Drive");
+      if (angleControlled){
+        //Driver only controlling translation, angle set by targeting command
+        System.out.println("Using target angle: "+targetAngleRadians);
+        return driveCommand( ()->0, ()->0, ()->Math.cos(targetAngleRadians), ()->Math.sin(targetAngleRadians));
+      }
+      //Drive Controlling Anglular rotation rate instead of angle
+      return driveRobotRelative( translationX, translationY, rotation1);
+    } 
+    */
+  }
   /**
    * Get the swerve drive kinematics object.
    *
