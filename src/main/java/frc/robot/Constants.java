@@ -84,6 +84,11 @@ public final class Constants {
     public static final int feedmotor = 22;
     public static final int shootermotor = 13;
   }
+  public static final class climber {
+    public static final int climbermotor = 23;
+    public static final double forwardlimit = 1.0; 
+    public static final double reverselimit = 1.0; 
+  }
   public static final class intake {
     public static final int motor1ID = 12;
     public static final int motor2ID = 13;
