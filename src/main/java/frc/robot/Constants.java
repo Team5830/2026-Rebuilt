@@ -80,6 +80,10 @@ public final class Constants {
         AutoAlign.kRotationPID
     );
   }
+  public static final class shooter {
+    public static final int feedmotor = 22;
+    public static final int shootermotor = 13;
+  }
   public static final class intake {
     public static final int motor1ID = 12;
     public static final int motor2ID = 13;
