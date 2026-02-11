@@ -58,6 +58,10 @@ public final class Constants {
     public static final double LEFT_X_DEADBAND = 0.01;
     public static final double LEFT_Y_DEADBAND = 0.01;
   }
+  public static final class shooter {
+    public static final int feedmotor = 22;
+    public static final int shootermotor = 13;
+  }
     public static class AutoAlign {
     public static final Time kAutoAlignPredict = Seconds.of(0.0);
     public static final Rotation2d kRotationTolerance = Rotation2d.fromDegrees(3.0);

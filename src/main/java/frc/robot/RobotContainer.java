@@ -59,7 +59,7 @@ public class RobotContainer {
 
       // Perform actions based on the selected option
       });
-      driveCommand = new DriveToPointAuto(m_swerveDrive);
+
 
     try {
       joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
