@@ -100,7 +100,7 @@ XboxController xboxController = new XboxController(2); // Creates an XboxControl
    */
   private void configureBindings() {
     joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1));
-    xboxController.y().onTrue(m_Shooter::toggleShooter);
+    joystick1.y().onTrue(m_Shooter.toggleShooter());
   }
 
   /**

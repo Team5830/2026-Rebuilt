@@ -115,18 +115,17 @@ public class Shooter extends SubsystemBase {
       });
     }
     public Command toggleShooter(){
-      if (ShooterisOn){
-        ShooterOff();
+      if (ShooterisOn){  
         ShooterisOn = false;
+        return runOnce(
+          ()-> { ShooterOff(); }
+        );
       }
       else {
-        ShooterOn();
         ShooterisOn = true;
+        return runOnce(
+          ()-> { ShooterOn(); }
+        );
       }
-      return runOnce(
-      ()-> {
-      ShootOff().andThen(new WaitCommand(0.2));
-      FeedOff();
-      });
     }
 }
