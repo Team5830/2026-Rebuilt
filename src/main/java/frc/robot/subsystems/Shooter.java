@@ -27,6 +27,7 @@ import swervelib.parser.PIDFConfig;
 import swervelib.telemetry.SwerveDriveTelemetry;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants;
 
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
@@ -47,6 +48,7 @@ public class Shooter extends SubsystemBase {
     SparkMaxConfig feedConfig;
     SparkFlex shootermotor;
     SparkMaxConfig shooterConfig;
+    boolean ShooterisOn = false;
 
     @SuppressWarnings("removal")
     public Shooter(){
@@ -61,37 +63,70 @@ public class Shooter extends SubsystemBase {
         shooterConfig.idleMode(IdleMode.kCoast);
         shooterConfig.encoder.countsPerRevolution(2);
         shooterConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(0.1, 00, 00);
+        .pid(0.003, 00, 0.18);
         var configret  = shootermotor.configure(shooterConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
          if (REVLibError.kOk != configret){
                 DriverStation.reportError("Failed to configure left manipulator motor " + configret, true);
             }
             
     }
+    
     public Command FeedOn(){
-    return runOnce(
-        ()-> {
-        feedmotor.setVoltage(0.5);
-      });
-    }
+      return runOnce(
+          ()-> {
+          feedmotor.setVoltage(0.5);
+        });
+      }
+
     public Command FeedOff(){
         return runOnce(
         ()-> {
         feedmotor.setVoltage(0.0);
         });
-        }
+    }
 
-     public Command ShootOn(){
-    return runOnce(
+    public Command ShootOn(){
+        return runOnce(
         ()-> {
         shootermotor.getClosedLoopController().setSetpoint( 300, ControlType.kVelocity);
       });
-    }
-      public Command ShootOff(){
-        return runOnce(
-        ()-> {
-        shootermotor.setVoltage(0.0);
-        });
-        }
+    } 
 
+    public Command ShootOff(){
+      return runOnce(
+      ()-> {
+      shootermotor.setVoltage(0.0);
+      });
+    }
+
+    public Command ShooterOn(){
+      return runOnce(
+      ()-> {
+      ShootOn().andThen(new WaitCommand(0.2));
+      FeedOn();
+      });
+    }
+
+    public Command ShooterOff(){
+      return runOnce(
+      ()-> {
+      ShootOff().andThen(new WaitCommand(0.2));
+      FeedOff();
+      });
+    }
+    public Command toggleShooter(){
+      if (ShooterisOn){
+        ShooterOff();
+        ShooterisOn = false;
+      }
+      else {
+        ShooterOn();
+        ShooterisOn = true;
+      }
+      return runOnce(
+      ()-> {
+      ShootOff().andThen(new WaitCommand(0.2));
+      FeedOff();
+      });
+    }
 }
