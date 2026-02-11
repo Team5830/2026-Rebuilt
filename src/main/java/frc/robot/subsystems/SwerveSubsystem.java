@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Meter;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
@@ -12,8 +13,11 @@ import com.pathplanner.lib.commands.PathfindingCommand;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.GoalEndState;
+import com.pathplanner.lib.path.IdealStartingState;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.Waypoint;
 import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
@@ -31,6 +35,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotBase;
@@ -47,7 +52,9 @@ import java.io.File;
 import java.io.IOException;
 //import java.rmi.RMISecurityException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -87,6 +94,7 @@ public class SwerveSubsystem extends SubsystemBase
   private       Vision              vision;
   public boolean driveField = false;
   private boolean brakeOn = false;
+  private PathConstraints autoPathConstraints;
   /**
    * Initialize {@link SwerveDrive} with the directory provided.
    *
@@ -118,6 +126,10 @@ public class SwerveSubsystem extends SubsystemBase
       new Pose2d(new Translation2d(Meter.of(0.7), Meter.of(7.3)), Rotation2d.fromDegrees(0)));
       // Alternative method if you don't want to supply the conversion factor via JSON files.
       // swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed, angleConversionFactor, driveConversionFactor);
+      // Create the constraints to use while pathfinding
+      autoPathConstraints = new PathConstraints(
+          swerveDrive.getMaximumChassisVelocity(), Constants.DriveTrain.maxAcceleration,
+          swerveDrive.getMaximumChassisAngularVelocity(), Units.degreesToRadians(Constants.DriveTrain.maxAngularAcceleration));
     } catch (Exception e)
     {
       throw new RuntimeException(e);
@@ -340,15 +352,11 @@ public class SwerveSubsystem extends SubsystemBase
    */
   public Command driveToPose(Pose2d pose)
   {
-// Create the constraints to use while pathfinding
-    PathConstraints constraints = new PathConstraints(
-        swerveDrive.getMaximumChassisVelocity(), 3.0,
-        swerveDrive.getMaximumChassisAngularVelocity(), Units.degreesToRadians(720));
-
+    
 // Since AutoBuilder is configured, we can use it to build pathfinding commands
     return AutoBuilder.pathfindToPose(
         pose,
-        constraints,
+        autoPathConstraints,
         edu.wpi.first.units.Units.MetersPerSecond.of(0) // Goal end velocity in meters/sec
                                      );
   }
@@ -414,6 +422,65 @@ public class SwerveSubsystem extends SubsystemBase
     return Commands.none();
 
   }
+
+  public Command generateCommand(Pose2d waypoint) {
+    // using defer causes this to run at runtime, the empty set is for the requirements
+    return Commands.defer(() -> {
+        return getPathFromWaypoint(waypoint);
+    }, Set.of());
+  }
+  // 
+  public Command getPathFromWaypoint(Pose2d waypoint) {
+      List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
+          new Pose2d(getPose().getTranslation(), getPathVelocityHeading(getFieldVelocity(), waypoint)),
+          waypoint
+      );
+      // For more precise alignment add PID positioning once close to target position,  for now don't use
+      /* 
+      if (waypoints.get(0).anchor().getDistance(waypoints.get(1).anchor()) < 0.01) {
+          return 
+          Commands.sequence(
+              Commands.print("start position PID loop"),
+              PositionPIDCommand.generateCommand(mSwerve, waypoint, kAlignmentAdjustmentTimeout),
+              Commands.print("end position PID loop")
+          );
+      }
+      */
+      PathPlannerPath path = new PathPlannerPath(
+          waypoints, 
+          autoPathConstraints,
+          new IdealStartingState(getVelocityMagnitude(getFieldVelocity()), getHeading()), 
+          new GoalEndState(0.0, waypoint.getRotation())
+      );
+
+      path.preventFlipping = true;
+
+      return AutoBuilder.followPath(path);
+      /*.andThen(
+          Commands.print("start position PID loop"),
+          PositionPIDCommand.generateCommand(swerveDrive, waypoint, kAlignmentAdjustmentTimeout),
+          Commands.print("end position PID loop")
+      );  */
+    }
+    
+
+    /**
+     * 
+     * @param cs field relative chassis speeds
+     * @return
+     */
+    private Rotation2d getPathVelocityHeading(ChassisSpeeds cs, Pose2d target){
+        if (getVelocityMagnitude(cs).in(MetersPerSecond) < 0.25) {
+            var diff = target.minus(getPose()).getTranslation();
+            return (diff.getNorm() < 0.01) ? target.getRotation() : diff.getAngle();
+        }
+        return new Rotation2d(cs.vxMetersPerSecond, cs.vyMetersPerSecond);
+    }
+
+    private LinearVelocity getVelocityMagnitude(ChassisSpeeds cs){
+        return MetersPerSecond.of(new Translation2d(cs.vxMetersPerSecond, cs.vyMetersPerSecond).getNorm());
+    }
+
 
 
   /**

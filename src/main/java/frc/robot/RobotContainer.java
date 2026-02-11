@@ -36,6 +36,7 @@ public class RobotContainer {
   private CommandXboxController joystick1;
   final SendableChooser<Command> autoChooser;
   final SendableChooser<Boolean> driveChooser= new SendableChooser<>();
+  Command driveCommand;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -58,6 +59,7 @@ public class RobotContainer {
 
       // Perform actions based on the selected option
       });
+      driveCommand = new DriveToPointAuto(m_swerveDrive);
 
     try {
       joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
@@ -97,6 +99,7 @@ public class RobotContainer {
    */
   private void configureBindings() {
     joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1));
+    joystick1.a().whileTrue(m_swerveDrive.generateCommand( new Pose2d(3.375, 6.364, Rotation2d.fromDegrees(-92.0))) );
   }
 
   /**

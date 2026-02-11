@@ -35,9 +35,9 @@ public final class Constants {
   public static final class DriveTrain {
     public static final double maxSpeed = 3.0; // 4 meters per second
     public static final double wheelDiameterInches = 4.0;
-    public static final double maxAcceleration = 1.0;
+    public static final double maxAcceleration = 3.0; //meters per second^2
     public static final double maxAngularVelocity = 15; // revolutions per second
-    public static final double maxAngularAcceleration = 20;
+    public static final double maxAngularAcceleration = 720; //Degrees per second^2
     public static final double wheelCircumferenceInches = wheelDiameterInches * Math.PI; // 12.5;
     public static final double driveGearRatio = 6.55; //Check Pinion: 10t, Central Gear: 42t:30t, Second Stage: 16t: total 6.72
     public static final double driveEncoderFactor = (wheelCircumferenceInches*2.54/100)/driveGearRatio; //Value used in JSON swerve config
