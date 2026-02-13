@@ -61,7 +61,7 @@ public class Shooter extends SubsystemBase {
         }
         shooterConfig = new SparkMaxConfig();
         shooterConfig.idleMode(IdleMode.kCoast);
-        shooterConfig.encoder.countsPerRevolution(2);
+        // shooterConfig.encoder.countsPerRevolution(2);
         shooterConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(0.003, 00, 0.18);
         var configret  = shootermotor.configure(shooterConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
