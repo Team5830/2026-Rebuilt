@@ -9,13 +9,16 @@ import frc.robot.commands.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.SwerveSubsystem;
+import frc.robot.subsystems.Shooter;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.io.File;
@@ -34,6 +37,7 @@ import com.pathplanner.lib.commands.PathPlannerAuto;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private SwerveSubsystem m_swerveDrive;
+  private Shooter m_Shooter;
   private CommandXboxController joystick1;
   final SendableChooser<Command> autoChooser;
   final SendableChooser<Boolean> driveChooser= new SendableChooser<>();
@@ -41,6 +45,7 @@ public class RobotContainer {
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     m_swerveDrive =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
+    m_Shooter = new Shooter();
     NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive, joystick1));
     driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
     driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
@@ -65,16 +70,14 @@ public class RobotContainer {
     } catch (RuntimeException ex) {
       DriverStation.reportError("Error instantiating Xboxcontroller1: " + ex.getMessage(), true);
     }
-
-
-    
+       
     Command oneDrive = m_swerveDrive.oneDriveCommand(
       () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND), // X
       () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND), // Y 
       () -> -joystick1.getRawAxis(4),                                                               // Angle 1
       () -> -joystick1.getRawAxis(5)                                                              // Angle 2
-      );
-
+      );  
+    
       /* -> driveCommand can take a single value for rotation or two for the specific target angle -> so take angle and pass cos(theta), sin(theta)
         Might also need to turn on heading correct
         Call just one drive command here, split options in servedrive.
@@ -86,7 +89,7 @@ public class RobotContainer {
     // Configure the trigger bindings
     configureBindings();
   }
-
+XboxController xboxController = new XboxController(2); // Creates an XboxController on port 2.
   /**
    * Use this method to define your trigger->command mappings. Triggers can be created via the
    * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary
@@ -99,6 +102,7 @@ public class RobotContainer {
   private void configureBindings() {
     joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1));
     joystick1.back().onTrue( m_swerveDrive.ToggleBrake());
+    joystick1.y().onTrue(m_Shooter.toggleShooter());
   }
 
   /**
