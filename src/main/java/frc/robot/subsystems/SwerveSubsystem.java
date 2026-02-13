@@ -290,6 +290,10 @@ public class SwerveSubsystem extends SubsystemBase
     
     return driveToPose( new Pose2d(robotpose.getX(),robotpose.getY(), Rotation2d.fromDegrees(degreesToTurn)));
   }
+  public double getDistanceToTag(int id)
+  {
+    return(vision.getDistanceFromAprilTag(id));
+  }
 
   /**
    * Get the path follower with events.
