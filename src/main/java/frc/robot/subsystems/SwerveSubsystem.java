@@ -86,6 +86,7 @@ public class SwerveSubsystem extends SubsystemBase
    */
   private       Vision              vision;
   public boolean driveField = false;
+  public boolean brakeOn = false;
   
   /**
    * Initialize {@link SwerveDrive} with the directory provided.
@@ -981,6 +982,28 @@ public class SwerveSubsystem extends SubsystemBase
   public void lock()
   {
     swerveDrive.lockPose();
+  }
+
+   public Command ToggleBrake(){
+    return runOnce(
+        ()-> {
+        brake();
+      });
+    }
+
+  public void brake()
+  {
+    if (brakeOn){
+      setMotorBrake(false);
+      System.out.println("Brake is off.");
+      brakeOn = false;
+    }
+    else{
+      setMotorBrake(true);
+      lock();
+      brakeOn = true;
+      System.out.println("Brake is on.");
+    }
   }
 
   /**

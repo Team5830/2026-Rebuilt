@@ -7,6 +7,7 @@ package frc.robot;
 import frc.robot.subsystems.*;
 import frc.robot.commands.*;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -100,6 +101,7 @@ XboxController xboxController = new XboxController(2); // Creates an XboxControl
    */
   private void configureBindings() {
     joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1));
+    joystick1.back().onTrue( m_swerveDrive.ToggleBrake());
     joystick1.y().onTrue(m_Shooter.toggleShooter());
   }
 
