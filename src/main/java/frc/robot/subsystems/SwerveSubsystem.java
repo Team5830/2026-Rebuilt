@@ -164,6 +164,7 @@ public class SwerveSubsystem extends SubsystemBase
     {
       vision.updatePoseEstimation(swerveDrive);
     }
+    SmartDashboard.putNumber( "DistancetoHub", getDistanceFromAprilTag());
     //driveFieldOriented = SmartDashboard.getBoolean("driveFieldOriented", false);
   }
 
@@ -874,6 +875,16 @@ public class SwerveSubsystem extends SubsystemBase
     swerveDrive.setMotorIdleMode(brake);
   }
 
+  public double getDistanceFromAprilTag(){
+    int tagnumber = 26;
+    if(isRedAlliance()){
+      tagnumber = 10;
+    }
+    return( vision.getDistanceFromAprilTag(tagnumber));
+  }
+  
+  
+  
   /**
    * Gets the current yaw angle of the robot, as reported by the swerve pose estimator in the underlying drivebase.
    * Note, this is not the raw gyro reading, this may be corrected from calls to resetOdometry().
