@@ -33,6 +33,10 @@ public final class AimAtHub extends Command {
 
     private double angleToTag(){
         Pose2d tagpose = swerve.GetTagPose(targetTag);
+        tagpose = new Pose2d(tagpose.getX() +0.6096, tagpose.getY(), tagpose.getRotation()); //0.6096m = 24 in
+            if(isRedAlliance()){
+                tagpose = new Pose2d(tagpose.getX() -0.6096, tagpose.getY(), tagpose.getRotation()); //0.6096m = 24 in
+            }
         Pose2d robotpose = swerve.getPose();
         double angle_rad = Math.atan2(
             tagpose.getY() - robotpose.getY(),
