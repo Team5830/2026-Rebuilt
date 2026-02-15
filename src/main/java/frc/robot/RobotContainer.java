@@ -103,6 +103,7 @@ XboxController xboxController = new XboxController(2); // Creates an XboxControl
     joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1));
     joystick1.back().onTrue( m_swerveDrive.ToggleBrake());
     joystick1.y().onTrue(m_Shooter.toggleShooter());
+    SmartDashboard.putData("getPathFromWaypoint", m_swerveDrive.getPathFromWaypoint(new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
   }
 
   /**
