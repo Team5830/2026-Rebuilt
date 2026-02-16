@@ -92,7 +92,7 @@ public class SwerveSubsystem extends SubsystemBase
   private       Vision              vision;
   public boolean driveField = false;
   public boolean brakeOn = false;
-  PathConstraints constraints;
+  public PathConstraints constraints;
   
   /**
    * Initialize {@link SwerveDrive} with the directory provided.
@@ -1041,7 +1041,7 @@ public class SwerveSubsystem extends SubsystemBase
    *
    * @return {@link SwerveDrive}
    */
-      private Rotation2d getPathVelocityHeading(ChassisSpeeds cs, Pose2d target){
+      public Rotation2d getPathVelocityHeading(ChassisSpeeds cs, Pose2d target){
         if (getVelocityMagnitude(cs).in(MetersPerSecond) < 0.25) {
             var diff = target.minus(getPose()).getTranslation();
             return (diff.getNorm() < 0.01) ? target.getRotation() : diff.getAngle();//.rotateBy(Rotation2d.k180deg);
@@ -1049,18 +1049,20 @@ public class SwerveSubsystem extends SubsystemBase
         return new Rotation2d(cs.vxMetersPerSecond, cs.vyMetersPerSecond);
     }
 
-    private LinearVelocity getVelocityMagnitude(ChassisSpeeds cs){
+    public LinearVelocity getVelocityMagnitude(ChassisSpeeds cs){
         return MetersPerSecond.of(new Translation2d(cs.vxMetersPerSecond, cs.vyMetersPerSecond).getNorm());
     }
   public SwerveDrive getSwerveDrive()
   {
     return swerveDrive;
   }
+
   public Command getPathFromWaypoint(Pose2d waypoint) {
     List waypoints = PathPlannerPath.waypointsFromPoses(
     new Pose2d(getPose().getTranslation(), getPathVelocityHeading(getFieldVelocity(), waypoint)),
     waypoint
     );
+
     PathPlannerPath path = new PathPlannerPath(
     waypoints, constraints,
     new IdealStartingState(getVelocityMagnitude(getFieldVelocity()), getHeading()),
@@ -1069,4 +1071,13 @@ public class SwerveSubsystem extends SubsystemBase
     path.preventFlipping = true;
     return AutoBuilder.followPath(path);
   }
+
+  public Command drivePath(PathPlannerPath path)
+  {
+// Create the constraints to use while pathfinding
+  
+// Since AutoBuilder is configured, we can use it to build pathfinding commands
+    return AutoBuilder.followPath(path);
+  }
+
 }
