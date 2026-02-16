@@ -54,7 +54,8 @@ public class RobotContainer {
       // This code will be executed whenever the selected option changes
       PathPlannerAuto AutoPath = new PathPlannerAuto(selectedOption);
       //m_swerveDrive.resetOdometry(AutoPath.getStartingPose());
-      m_swerveDrive.resetOdometry(new Pose2d(0.7,7.3,Rotation2d.fromDegrees(0)));
+      //m_swerveDrive.resetOdometry(new Pose2d(0.7,7.3,Rotation2d.fromDegrees(0)));
+      m_swerveDrive.resetOdometry(new Pose2d(6.183,4,Rotation2d.fromDegrees(0)));
       System.out.println("Selected option: " + selectedOption);
 
       // Perform actions based on the selected option
@@ -100,6 +101,7 @@ public class RobotContainer {
   private void configureBindings() {
     joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1));
     joystick1.a().whileTrue(m_swerveDrive.generateCommand( new Pose2d(3.375, 6.364, Rotation2d.fromDegrees(-92.0))) );
+    SmartDashboard.putData("pathplan", m_swerveDrive.generateCommand( new Pose2d(3.375, 6.364, Rotation2d.fromDegrees(-92.0))));
   }
 
   /**

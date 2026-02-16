@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Meter;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -121,9 +122,9 @@ public class SwerveSubsystem extends SubsystemBase
     // Configure the Telemetry before creating the SwerveDrive to avoid unnecessary objects being created.
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     try
-    {
+    { //Pose2d(6.183,4,Rotation2d.fromDegrees(0))
       swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.DriveTrain.maxSpeed,
-      new Pose2d(new Translation2d(Meter.of(0.7), Meter.of(7.3)), Rotation2d.fromDegrees(0)));
+      new Pose2d(new Translation2d(Meter.of(6.183), Meter.of(4)), Rotation2d.fromDegrees(0)));
       // Alternative method if you don't want to supply the conversion factor via JSON files.
       // swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed, angleConversionFactor, driveConversionFactor);
       // Create the constraints to use while pathfinding
@@ -431,10 +432,23 @@ public class SwerveSubsystem extends SubsystemBase
   }
   // 
   public Command getPathFromWaypoint(Pose2d waypoint) {
-      List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
-          new Pose2d(getPose().getTranslation(), getPathVelocityHeading(getFieldVelocity(), waypoint)),
-          waypoint
-      );
+      List<Waypoint> waypoints;
+      if (getPose().getMeasureX().in(Meters) > 4.6) {
+          //Add passthrough as waypoint
+          Pose2d passthroughWayPoint1 = new Pose2d(5.65,7.30, Rotation2d.k180deg);
+          Pose2d passthroughWayPoint2 = new Pose2d(3.5,7.30, Rotation2d.k180deg);
+          waypoints = PathPlannerPath.waypointsFromPoses(
+            new Pose2d(getPose().getTranslation(), getPathVelocityHeading(getFieldVelocity(), passthroughWayPoint1)),
+            passthroughWayPoint1,
+            passthroughWayPoint2,
+            waypoint
+        );
+      }else{
+        waypoints = PathPlannerPath.waypointsFromPoses(
+            new Pose2d(getPose().getTranslation(), getPathVelocityHeading(getFieldVelocity(), waypoint)),
+            waypoint
+        );
+      }
       // For more precise alignment add PID positioning once close to target position,  for now don't use
       /* 
       if (waypoints.get(0).anchor().getDistance(waypoints.get(1).anchor()) < 0.01) {
@@ -454,8 +468,8 @@ public class SwerveSubsystem extends SubsystemBase
       );
 
       path.preventFlipping = true;
-
-      return AutoBuilder.followPath(path);
+      return AutoBuilder.pathfindThenFollowPath(path, autoPathConstraints);
+      //return AutoBuilder.followPath(path); //AutoBuilder.pathfindThenFollowPath
       /*.andThen(
           Commands.print("start position PID loop"),
           PositionPIDCommand.generateCommand(swerveDrive, waypoint, kAlignmentAdjustmentTimeout),
