@@ -7,6 +7,7 @@ import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.IdealStartingState;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.path.Waypoint;
+import com.pathplanner.lib.util.FlippingUtil;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -35,7 +36,7 @@ public final class AutoWaypoints extends Command{
         return alliance.isPresent() ? alliance.get() == DriverStation.Alliance.Red : false;
     }
     private Pose2d convertBluetoRed(Pose2d BluePose){
-        return new Pose2d(16.46-BluePose.getX(), 8.22-BluePose.getY(),BluePose.getRotation().minus(Rotation2d.k180deg));
+        return (FlippingUtil.flipFieldPose(BluePose));
     }
 @Override
     public void initialize(){
@@ -44,7 +45,45 @@ public final class AutoWaypoints extends Command{
         if (isRedAlliance()){
             targetPose = convertBluetoRed(targetPose);
         }
-        if (isRedAlliance()){}
+        if (isRedAlliance()){
+             if (currentPose.getX() < 12){       
+                                               //If past wall
+                if (currentPose.getY() > 4){                                    //If above midpoint
+                    WayPoint1 = convertBluetoRed(new Pose2d(5.65, 7.3, Rotation2d.k180deg));
+                    WayPoint2 = convertBluetoRed(new Pose2d(3.5, 7.3, Rotation2d.k180deg));
+                }
+                else{
+                    WayPoint1 = convertBluetoRed(new Pose2d(5.72, 0.64, Rotation2d.k180deg));
+                    WayPoint2 = convertBluetoRed(new Pose2d(3.49, 0.64, Rotation2d.k180deg));
+                }
+                List waypoints = PathPlannerPath.waypointsFromPoses(
+                new Pose2d(currentPose.getTranslation(), swerve.getPathVelocityHeading(swerve.getFieldVelocity(), WayPoint1)),
+                WayPoint1,
+                WayPoint2,
+                targetPose);
+                PathPlannerPath path = new PathPlannerPath(
+                    waypoints, swerve.constraints,
+                    new IdealStartingState(swerve.getVelocityMagnitude(swerve.getFieldVelocity()), swerve.getHeading()),
+                    new GoalEndState(0.0, targetPose.getRotation())
+                    );
+                    path.preventFlipping = true;
+                    pathcommand = swerve.drivePath(path);
+                    CommandScheduler.getInstance().schedule(pathcommand);
+        
+            }else{
+                List waypoints = PathPlannerPath.waypointsFromPoses(
+                new Pose2d(currentPose.getTranslation(), swerve.getPathVelocityHeading(swerve.getFieldVelocity(), targetPose)),
+                    targetPose);
+                PathPlannerPath path = new PathPlannerPath(
+                    waypoints, swerve.constraints,
+                    new IdealStartingState(swerve.getVelocityMagnitude(swerve.getFieldVelocity()), swerve.getHeading()),
+                    new GoalEndState(0.0, targetPose.getRotation())
+                    );
+                    path.preventFlipping = true;
+                    pathcommand = swerve.drivePath(path);
+                    CommandScheduler.getInstance().schedule(pathcommand);
+            }
+        }
         else{    
             if (currentPose.getX() > 4.8){       
                                                //If past wall
@@ -70,9 +109,18 @@ public final class AutoWaypoints extends Command{
                     pathcommand = swerve.drivePath(path);
                     CommandScheduler.getInstance().schedule(pathcommand);
         
-            }
-            else{
-
+            }else{
+                List waypoints = PathPlannerPath.waypointsFromPoses(
+                new Pose2d(currentPose.getTranslation(), swerve.getPathVelocityHeading(swerve.getFieldVelocity(), targetPose)),
+                    targetPose);
+                PathPlannerPath path = new PathPlannerPath(
+                    waypoints, swerve.constraints,
+                    new IdealStartingState(swerve.getVelocityMagnitude(swerve.getFieldVelocity()), swerve.getHeading()),
+                    new GoalEndState(0.0, targetPose.getRotation())
+                    );
+                    path.preventFlipping = true;
+                    pathcommand = swerve.drivePath(path);
+                    CommandScheduler.getInstance().schedule(pathcommand);
             }
             }  
     
