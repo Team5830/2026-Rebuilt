@@ -37,7 +37,11 @@ import com.pathplanner.lib.commands.PathPlannerAuto;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private SwerveSubsystem m_swerveDrive;
-  private Shooter m_Shooter;
+  private Shooter m_Shooter =  new Shooter();
+  private Climber m_climber = new Climber(); 
+  private Hopper m_hopper   = new Hopper();
+  private Intake m_intake   = new Intake();
+
   private CommandXboxController joystick1;
   final SendableChooser<Command> autoChooser;
   final SendableChooser<Boolean> driveChooser= new SendableChooser<>();
@@ -45,7 +49,6 @@ public class RobotContainer {
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     m_swerveDrive =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
-    m_Shooter = new Shooter();
     NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive, joystick1));
     driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
     driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
@@ -89,7 +92,7 @@ public class RobotContainer {
     // Configure the trigger bindings
     configureBindings();
   }
-XboxController xboxController = new XboxController(2); // Creates an XboxController on port 2.
+  CommandXboxController xboxController = new CommandXboxController(Constants.controller.xboxPort2); // Creates an XboxController on port 2.
   /**
    * Use this method to define your trigger->command mappings. Triggers can be created via the
    * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary
@@ -100,9 +103,15 @@ XboxController xboxController = new XboxController(2); // Creates an XboxControl
    * joysticks}.
    */
   private void configureBindings() {
+    /* Driver Controls Port 1 */
     joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1));
     joystick1.back().onTrue( m_swerveDrive.ToggleBrake());
     joystick1.y().onTrue(m_Shooter.toggleShooter());
+    /*Co-driver controls  Port 2 */
+    xboxController.povUp().onTrue( m_climber.Up());
+    xboxController.povDown().onTrue(m_climber.Down());
+    xboxController.rightTrigger().onTrue(m_intake.IntakeOn());
+
   }
 
   /**
