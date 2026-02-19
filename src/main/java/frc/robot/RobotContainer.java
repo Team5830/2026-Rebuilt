@@ -26,6 +26,7 @@ import java.io.File;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import frc.robot.commands.AutoWaypoints;
 
 
 /**
@@ -107,12 +108,17 @@ public class RobotContainer {
     joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1));
     joystick1.back().onTrue( m_swerveDrive.ToggleBrake());
     joystick1.y().onTrue(m_Shooter.toggleShooter());
+    joystick1.povLeft().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
+    joystick1.povUp().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
+    joystick1.povDown().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
+    joystick1.povRight().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
+    
     /*Co-driver controls  Port 2 */
     xboxController.povUp().onTrue( m_climber.Up());
     xboxController.povDown().onTrue(m_climber.Down());
     xboxController.rightTrigger().onTrue(m_intake.IntakeOn());
-
-  }
+   
+    }
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.

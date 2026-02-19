@@ -42,25 +42,33 @@ import com.revrobotics.ColorSensorV3;
 import edu.wpi.first.wpilibj.RobotBase;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.RelativeEncoder;
 
 public class Shooter extends SubsystemBase {
-    SparkFlex feedmotor;
+    SparkMax feedmotor;
     SparkMaxConfig feedConfig;
-    SparkFlex shootermotor;
+    SparkMax shootermotor;
     SparkMaxConfig shooterConfig;
     boolean ShooterisOn = false;
+    SparkMax hoodmotor;
+    SparkMaxConfig hoodConfig;
+    SparkClosedLoopController HoodMotorController;
+    RelativeEncoder encoder;
 
     @SuppressWarnings("removal")
     public Shooter(){
         try{
-          feedmotor = new SparkFlex(Constants.shooter.feedmotor, MotorType.kBrushless);    
-          shootermotor = new SparkFlex(Constants.shooter.shootermotor, MotorType.kBrushless);
+          feedmotor = new SparkMax(Constants.shooter.feedmotor, MotorType.kBrushless);    
+          shootermotor = new SparkMax(Constants.shooter.shootermotor, MotorType.kBrushless);
+          hoodmotor = new SparkMax(Constants.shooter.hoodmotor, MotorType.kBrushless);
         }
         catch (RuntimeException ex) {
             DriverStation.reportError("Error instantiating Shooter: " + ex.getMessage(), true);
         }
         shooterConfig = new SparkMaxConfig();
         shooterConfig.idleMode(IdleMode.kCoast);
+        hoodConfig.idleMode(IdleMode.kBrake);
         // shooterConfig.encoder.countsPerRevolution(2);
         shooterConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(0.003, 00, 0.18);
@@ -68,7 +76,34 @@ public class Shooter extends SubsystemBase {
          if (REVLibError.kOk != configret){
                 DriverStation.reportError("Failed to configure left manipulator motor " + configret, true);
             }
-            
+        hoodConfig.softLimit
+        .forwardSoftLimit(Constants.shooter.ForwardLimit)
+        .forwardSoftLimitEnabled(true)
+        .reverseSoftLimit(Constants.shooter.ReverseLimit)
+        .reverseSoftLimitEnabled(true);
+        hoodConfig.closedLoop
+          .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+          // Set PID values for position control. We don't need to pass a closed loop
+          // slot, as it will default to slot 0.
+          .p(Constants.shooter.hoodp)
+          .i(Constants.shooter.hoodi)
+          .d(Constants.shooter.hoodd)
+          .outputRange(-1, 1);
+        hoodConfig.smartCurrentLimit(40);
+         var configrett = hoodmotor.configure(hoodConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+        if (REVLibError.kOk != configrett){
+          DriverStation.reportError("Failed to configure elevator motor " + configrett, true);
+        }
+         HoodMotorController = hoodmotor.getClosedLoopController();
+        // Reset the position to 0 to start within the range of the soft limits
+        encoder.setPosition(0);
+    }
+
+    public Command moveHood(double angle){
+       return runOnce(
+          ()-> {
+      HoodMotorController.setSetpoint(angle, ControlType.kPosition);
+          });
     }
     
     public Command FeedOn(){
