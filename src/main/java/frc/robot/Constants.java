@@ -51,8 +51,9 @@ public final class Constants {
     // public static final double turnControllerKd = 0.002;
   }
    public static final class controller {
-    public static final int xboxPort1 = 0;
-     public static final double xRateLimit = 20;
+    public static final int xboxPort1 = 0; //Driver
+    public static final int xboxPort2 = 1; //Co -driver
+    public static final double xRateLimit = 20;
     public static final double yRateLimit = 20;
     public static final double rotRateLimit = 2;
     public static final double LEFT_X_DEADBAND = 0.01;
