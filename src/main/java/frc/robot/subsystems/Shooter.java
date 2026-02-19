@@ -102,7 +102,7 @@ public class Shooter extends SubsystemBase {
     public Command moveHood(double angle){
        return runOnce(
           ()-> {
-      HoodMotorController.setSetpoint(angle, ControlType.kPosition);
+          HoodMotorController.setSetpoint(angle, ControlType.kPosition);
           });
     }
     
