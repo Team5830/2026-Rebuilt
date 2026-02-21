@@ -90,6 +90,10 @@ public final class Constants {
     public static final double hoodp = 0.1;
     public static final double hoodi = 0.0;
     public static final double hoodd = 0.0;
+    public static final double SpeedB = 0;
+    public static final double SpeedC = 4200;
+    public static final double AngleB = 0;
+    public static final double AngleC = 1;
   }
   public static final class climber {
     public static final int climbermotor = 23;

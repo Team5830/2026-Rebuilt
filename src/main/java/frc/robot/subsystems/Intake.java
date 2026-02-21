@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.subsystems.Lights;
 
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.ControlType;
@@ -17,6 +18,8 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 public class Intake extends SubsystemBase {
     SparkFlex intakeMotor1, intakeMotor2;
     SparkMaxConfig config1, config2;
+    boolean IntakeisOn = false;
+    Lights m_Lights;
     public Intake(){
         try{
             intakeMotor1 = new SparkFlex(Constants.intake.motor1ID,MotorType.kBrushless);
@@ -40,5 +43,20 @@ public class Intake extends SubsystemBase {
             intakeMotor2.setVoltage(0.0);
           });
       }
+    
+    public Command toggleIntake(){
+      if (IntakeisOn){  
+        IntakeisOn = false;
+        return runOnce(
+          ()-> { IntakeOff();}
+        );
+      }
+      else {
+        IntakeisOn = true;
+        return runOnce(
+          ()-> { IntakeOn(); }
+        );
+      }
+    }
     
 }

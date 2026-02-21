@@ -2,15 +2,16 @@ package frc.robot.commands;
 
 import frc.robot.Constants;
 import frc.robot.subsystems.SwerveSubsystem;
+import frc. robot. subsystems.Lights;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 
 public final class AimAtHub extends Command {
     SwerveSubsystem swerve;
@@ -20,10 +21,12 @@ public final class AimAtHub extends Command {
     Pose2d robotOffset;
     double targetAngleDegrees = 0;
     int targetTag = 0;
-    public AimAtHub(SwerveSubsystem swerve, CommandXboxController joystick){
+    Lights lights;
+    public AimAtHub(SwerveSubsystem swerve, CommandXboxController joystick, Lights lights){
         addRequirements(swerve);
         this.swerve=swerve;
         this.joystick = joystick;
+        this.lights=lights;
     }
     
     private boolean isRedAlliance()
@@ -73,6 +76,10 @@ public final class AimAtHub extends Command {
     @Override
     public void execute(){
         double distanceToTag = swerve.getDistanceToTag(targetTag);
+        if (Math.abs(swerve.getPose().getRotation().getDegrees()-targetAngleDegrees) < 2){
+            lights.green().schedule();
+        }
+        
         SmartDashboard.putNumber("DistanceToHub", distanceToTag);
     }
     @Override

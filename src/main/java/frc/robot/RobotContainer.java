@@ -8,6 +8,7 @@ import frc.robot.subsystems.*;
 import frc.robot.commands.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -22,11 +23,12 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.io.File;
+import frc.robot.subsystems.Lights;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
-import frc.robot.commands.AutoWaypoints;
+import frc.robot.subsystems.Hopper;
 
 
 /**
@@ -42,15 +44,16 @@ public class RobotContainer {
   private Climber m_climber = new Climber(); 
   private Hopper m_hopper   = new Hopper();
   private Intake m_intake   = new Intake();
+  private Lights m_Lights = new Lights();
 
-  private CommandXboxController joystick1;
+  private CommandXboxController joystick1, xboxController;
   final SendableChooser<Command> autoChooser;
   final SendableChooser<Boolean> driveChooser= new SendableChooser<>();
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     m_swerveDrive =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
-    NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive, joystick1));
+    NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
     driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
     driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
     driveChooser.onChange((selectedOption)->{
@@ -71,8 +74,9 @@ public class RobotContainer {
 
     try {
       joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
+      xboxController = new CommandXboxController(Constants.controller.xboxPort2); // Creates an XboxController on port 2.
     } catch (RuntimeException ex) {
-      DriverStation.reportError("Error instantiating Xboxcontroller1: " + ex.getMessage(), true);
+      DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
     }
        
     Command oneDrive = m_swerveDrive.oneDriveCommand(
@@ -88,12 +92,12 @@ public class RobotContainer {
       */
     m_swerveDrive.setDefaultCommand(oneDrive);
     SmartDashboard.putData("Auto Chooser", autoChooser);
-    SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerveDrive, joystick1));
+    SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
     SmartDashboard.putData("drive",driveChooser);
     // Configure the trigger bindings
     configureBindings();
   }
-  CommandXboxController xboxController = new CommandXboxController(Constants.controller.xboxPort2); // Creates an XboxController on port 2.
+  
   /**
    * Use this method to define your trigger->command mappings. Triggers can be created via the
    * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary
@@ -105,9 +109,9 @@ public class RobotContainer {
    */
   private void configureBindings() {
     /* Driver Controls Port 1 */
-    joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1));
+    joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1, m_Lights));
     joystick1.back().onTrue( m_swerveDrive.ToggleBrake());
-    joystick1.y().onTrue(m_Shooter.toggleShooter());
+    joystick1.y().onTrue(new Shoot(m_Shooter));
     joystick1.povLeft().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     joystick1.povUp().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
     joystick1.povDown().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
@@ -116,7 +120,8 @@ public class RobotContainer {
     /*Co-driver controls  Port 2 */
     xboxController.povUp().onTrue( m_climber.Up());
     xboxController.povDown().onTrue(m_climber.Down());
-    xboxController.rightTrigger().onTrue(m_intake.IntakeOn());
+    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Lights.blue()));
+    xboxController.a().onTrue(m_hopper.toggleHopperCommand());
    
     }
 
