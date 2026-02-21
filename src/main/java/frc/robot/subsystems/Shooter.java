@@ -55,6 +55,7 @@ public class Shooter extends SubsystemBase {
     SparkMaxConfig hoodConfig;
     SparkClosedLoopController HoodMotorController;
     RelativeEncoder encoder;
+    double shootspeed = 4200;
 
     @SuppressWarnings("removal")
     public Shooter(){
@@ -120,10 +121,17 @@ public class Shooter extends SubsystemBase {
         });
     }
 
+    public Command setShootSpeed(double setSetpoint){
+        return runOnce(
+        ()-> {
+        shootspeed = setSetpoint;
+      });
+    } 
+
     public Command ShootOn(){
         return runOnce(
         ()-> {
-        shootermotor.getClosedLoopController().setSetpoint( 300, ControlType.kVelocity);
+        shootermotor.getClosedLoopController().setSetpoint(shootspeed, ControlType.kVelocity);
       });
     } 
 
