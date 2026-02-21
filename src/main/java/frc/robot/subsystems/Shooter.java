@@ -69,6 +69,7 @@ public class Shooter extends SubsystemBase {
         }
         shooterConfig = new SparkMaxConfig();
         shooterConfig.idleMode(IdleMode.kCoast);
+        hoodConfig = new SparkMaxConfig();
         hoodConfig.idleMode(IdleMode.kBrake);
         // shooterConfig.encoder.countsPerRevolution(2);
         shooterConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder)
