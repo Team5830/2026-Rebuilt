@@ -102,6 +102,7 @@ public class Shooter extends SubsystemBase {
           DriverStation.reportError("Failed to configure elevator motor " + configrett, true);
         }
          HoodMotorController = hoodmotor.getClosedLoopController();
+         encoder = hoodmotor.getEncoder();
         // Reset the position to 0 to start within the range of the soft limits
         encoder.setPosition(0);
     }
