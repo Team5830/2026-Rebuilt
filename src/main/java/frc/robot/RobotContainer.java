@@ -54,6 +54,9 @@ public class RobotContainer {
   public RobotContainer() {
     m_swerveDrive =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
     NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
+    NamedCommands.registerCommand("ToggleShoot", new Shoot(m_Shooter, m_intake));
+    NamedCommands.registerCommand("ToggleIntake", m_intake.toggleIntake());
+    NamedCommands.registerCommand("ToggleHopper", m_hopper.toggleHopperCommand());
     driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
     driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
     driveChooser.onChange((selectedOption)->{
