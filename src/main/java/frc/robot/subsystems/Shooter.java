@@ -42,14 +42,15 @@ import com.revrobotics.ColorSensorV3;
 import edu.wpi.first.wpilibj.RobotBase;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.RelativeEncoder;
 
 public class Shooter extends SubsystemBase {
     SparkMax feedmotor;
     SparkMaxConfig feedConfig;
     SparkMax shootermotor;
+    SparkMax shootermotor2;
     SparkMaxConfig shooterConfig;
+    SparkMaxConfig shooter2Config;
     boolean ShooterisOn = false;
     SparkMax hoodmotor;
     SparkMaxConfig hoodConfig;
@@ -62,6 +63,7 @@ public class Shooter extends SubsystemBase {
         try{
           feedmotor = new SparkMax(Constants.shooter.feedmotor, MotorType.kBrushless);    
           shootermotor = new SparkMax(Constants.shooter.shootermotor, MotorType.kBrushless);
+          shootermotor2 = new SparkMax(Constants.shooter.shootermotor2, MotorType.kBrushless);
           hoodmotor = new SparkMax(Constants.shooter.hoodmotor, MotorType.kBrushless);
         }
         catch (RuntimeException ex) {
@@ -69,6 +71,9 @@ public class Shooter extends SubsystemBase {
         }
         shooterConfig = new SparkMaxConfig();
         shooterConfig.idleMode(IdleMode.kCoast);
+        shooter2Config = new SparkMaxConfig();
+        shooter2Config.idleMode(IdleMode.kCoast);
+        shooter2Config.follow(shootermotor, true);
         hoodConfig = new SparkMaxConfig();
         hoodConfig.idleMode(IdleMode.kBrake);
         // shooterConfig.encoder.countsPerRevolution(2);
