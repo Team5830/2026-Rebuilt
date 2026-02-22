@@ -94,6 +94,10 @@ public class RobotContainer {
     SmartDashboard.putData("Auto Chooser", autoChooser);
     SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
     SmartDashboard.putData("drive",driveChooser);
+    SmartDashboard.putData("Blue Lights",m_Lights.blue());
+    SmartDashboard.putData("Lights off",m_Lights.off());
+    SmartDashboard.putData("Red Lights",m_Lights.red());
+    SmartDashboard.putData("Rainbow Lights",m_Lights.rainbow());
     // Configure the trigger bindings
     configureBindings();
   }
@@ -120,7 +124,7 @@ public class RobotContainer {
     /*Co-driver controls  Port 2 */
     xboxController.povUp().onTrue( m_climber.Up());
     xboxController.povDown().onTrue(m_climber.Down());
-    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Lights.blue()));
+    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_Lights.red(),m_intake.toggleIntake()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
    
     }
