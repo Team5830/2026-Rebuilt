@@ -21,7 +21,7 @@ public class Lights extends SubsystemBase {
     AddressableLEDBuffer m_ledBuffer = new AddressableLEDBuffer(150);
     Distance LED_SPACING = Meters.of(16.0*12*0.0254 / 150);
     int brightness = 20;
-    public boolean lightsoff;
+    public boolean lightsoff=true;
     // The below pattern should be periodically applied
     // To create a new pattern commands should just change the pattern
     LEDPattern ledPattern = LEDPattern.solid(Color.kBlue);//LEDPattern.kOff;
@@ -58,11 +58,19 @@ public class Lights extends SubsystemBase {
         return runOnce(
             () -> {
             // Create an LED pattern that sets the entire strip to solid blue
-            ledPattern = LEDPattern.solid(Color.kBlue);
-            ledPattern.atBrightness(Percent.of(brightness));
-            scroll = false;
-            System.out.println("Blue light command");
-            });
+            if (lightsoff){
+                ledPattern = LEDPattern.solid(Color.kBlue);
+                ledPattern.atBrightness(Percent.of(brightness));
+                scroll = false;
+                lightsoff = false;
+                System.out.println("Blue light command");
+                lightsoff=false;
+                }else{
+                    off();
+                }
+                });
+                
+            
         }
     
     public Command green(){       
