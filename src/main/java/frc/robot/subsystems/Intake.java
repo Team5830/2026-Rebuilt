@@ -20,6 +20,7 @@ public class Intake extends SubsystemBase {
     SparkMaxConfig config1, config2;
     boolean IntakeisOn = false;
     Lights m_Lights;
+    boolean FeedisOn=false;
     public Intake(){
         try{
             intakeMotor1 = new SparkFlex(Constants.intake.motor1ID,MotorType.kBrushless);
@@ -36,7 +37,21 @@ public class Intake extends SubsystemBase {
             intakeMotor2.setVoltage(-0.3);
           });
       }
-       public Command IntakeOff(){
+    public Command IntakeOff(){
+        return runOnce(
+            ()-> {
+            intakeMotor1.setVoltage(0.0);
+            intakeMotor2.setVoltage(0.0);
+          });
+        }
+    public Command FeedOn(){
+        return runOnce(
+            ()-> {
+            intakeMotor1.setVoltage(0.3);
+            intakeMotor2.setVoltage(0.3);
+          });
+      }
+    public Command FeedOff(){
         return runOnce(
             ()-> {
             intakeMotor1.setVoltage(0.0);
@@ -58,5 +73,18 @@ public class Intake extends SubsystemBase {
         );
       }
     }
-    
+     public Command toggleFeed(){
+      if (FeedisOn){  
+        FeedisOn = false;
+        return runOnce(
+          ()-> { FeedOff(); }
+        );
+      }
+      else {
+        FeedisOn = true;
+        return runOnce(
+          ()-> { FeedOn(); }
+        );
+      }
+    }
 }

@@ -84,6 +84,7 @@ public final class Constants {
   public static final class shooter {
     public static final int feedmotor = 22;
     public static final int shootermotor = 13;
+    public static final int shootermotor2 = 14;
     public static final int hoodmotor = 24;
     public static final double ForwardLimit = 8.0;
     public static final double ReverseLimit = 0.0;

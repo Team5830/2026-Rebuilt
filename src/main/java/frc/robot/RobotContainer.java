@@ -54,6 +54,15 @@ public class RobotContainer {
   public RobotContainer() {
     m_swerveDrive =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
     NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
+    NamedCommands.registerCommand("ToggleShoot", new Shoot(m_Shooter, m_intake));
+    NamedCommands.registerCommand("ToggleIntake", m_intake.toggleIntake());
+    NamedCommands.registerCommand("ToggleHopper", m_hopper.toggleHopperCommand());
+    driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
+    driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
+    driveChooser.onChange((selectedOption)->{
+      m_swerveDrive.driveField = selectedOption;
+      System.out.println("field drive value"+selectedOption);
+    });
     // Autochooser must be setup after the named commands
     autoChooser = AutoBuilder.buildAutoChooser("Auto1");
     autoChooser.onChange((selectedOption) -> {
@@ -102,6 +111,10 @@ public class RobotContainer {
     SmartDashboard.putData("Auto Chooser", autoChooser);
     SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
     SmartDashboard.putData("drive",driveChooser);
+    SmartDashboard.putData("Blue Lights",m_Lights.blue());
+    SmartDashboard.putData("Lights off",m_Lights.off());
+    SmartDashboard.putData("Red Lights",m_Lights.red());
+    SmartDashboard.putData("Rainbow Lights",m_Lights.rainbow());
     // Configure the trigger bindings
     configureBindings();
   }
@@ -119,7 +132,7 @@ public class RobotContainer {
     /* Driver Controls Port 1 */
     joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1, m_Lights));
     joystick1.back().onTrue( m_swerveDrive.ToggleBrake());
-    joystick1.y().onTrue(new Shoot(m_Shooter));
+    joystick1.y().onTrue(new Shoot(m_Shooter, m_intake));
     joystick1.povLeft().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     joystick1.povUp().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
     joystick1.povDown().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
@@ -128,7 +141,7 @@ public class RobotContainer {
     /*Co-driver controls  Port 2 */
     xboxController.povUp().onTrue( m_climber.Up());
     xboxController.povDown().onTrue(m_climber.Down());
-    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Lights.blue()));
+    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_Lights.red(),m_intake.toggleIntake()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
    
     }

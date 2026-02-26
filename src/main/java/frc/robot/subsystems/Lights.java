@@ -82,8 +82,6 @@ public class Lights extends SubsystemBase {
                 ledPattern.applyTo(m_ledBuffer);
                 m_led.setData(m_ledBuffer);
                 });
-                
-            
         }
     
     public Command green(){       
