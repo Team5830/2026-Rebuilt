@@ -12,8 +12,6 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.subsystems.SwerveSubsystem;
-import frc.robot.subsystems.Shooter;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -23,12 +21,14 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.io.File;
-import frc.robot.subsystems.Lights;
+import java.util.List;
+
+import javax.imageio.plugins.tiff.GeoTIFFTagSet;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
-import frc.robot.subsystems.Hopper;
+import com.pathplanner.lib.path.PathPlannerPath;
 
 
 /**
@@ -54,21 +54,29 @@ public class RobotContainer {
   public RobotContainer() {
     m_swerveDrive =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
     NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
-    driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
-    driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
-    driveChooser.onChange((selectedOption)->{
-      m_swerveDrive.driveField = selectedOption;
-      System.out.println("field drive value"+selectedOption);
-    });
     // Autochooser must be setup after the named commands
     autoChooser = AutoBuilder.buildAutoChooser("Auto1");
     autoChooser.onChange((selectedOption) -> {
       // This code will be executed whenever the selected option changes
       PathPlannerAuto AutoPath = new PathPlannerAuto(selectedOption);
-      //m_swerveDrive.resetOdometry(AutoPath.getStartingPose());
-      m_swerveDrive.resetOdometry(new Pose2d(0.7,7.3,Rotation2d.fromDegrees(0)));
-      System.out.println("Selected option: " + selectedOption);
+      List<PathPlannerPath> pathsInAuto = null;
+      try{
+        //pathsInAuto = AutoPath.getPathGroupFromAutoFile(selectedOption.getName());
+        pathsInAuto = PathPlannerAuto.getPathGroupFromAutoFile(selectedOption.getName());
+      }catch( Exception ex){ 
+        System.out.println("Failed to parse autopath"+selectedOption.getName());
 
+      }
+      Pose2d startingPose = new Pose2d(0,0,Rotation2d.kZero);
+      if (!pathsInAuto.isEmpty()) {
+        PathPlannerPath path0 = pathsInAuto.get(0);
+        startingPose = new Pose2d(path0.getPoint(0).position, path0.getIdealStartingState().rotation());
+      }
+      m_swerveDrive.resetOdometry(startingPose);
+    
+      System.out.println("Selected option: " + selectedOption + "   "+selectedOption.getName());
+      System.out.println("pose: "+startingPose.getX()+", "+startingPose.getY());
+      
       // Perform actions based on the selected option
       });
 
@@ -134,9 +142,9 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
 
     Command selected = autoChooser.getSelected();
-    String autoName = autoChooser.getSelected().getName();
-    PathPlannerAuto AutoPath = new PathPlannerAuto(autoName);
-    m_swerveDrive.resetOdometry(AutoPath.getStartingPose());
+    //String autoName = autoChooser.getSelected().getName();
+    //PathPlannerAuto AutoPath = new PathPlannerAuto(autoName);
+    //m_swerveDrive.resetOdometry(AutoPath.getStartingPose());
     return selected;
     
   }

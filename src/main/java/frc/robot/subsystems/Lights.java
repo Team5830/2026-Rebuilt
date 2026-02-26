@@ -21,16 +21,20 @@ public class Lights extends SubsystemBase {
     AddressableLEDBuffer m_ledBuffer = new AddressableLEDBuffer(150);
     Distance LED_SPACING = Meters.of(16.0*12*0.0254 / 150);
     int brightness = 20;
-    public boolean lightsoff=true;
+    boolean lightson=false;
+    String color = "off";
     // The below pattern should be periodically applied
     // To create a new pattern commands should just change the pattern
-    LEDPattern ledPattern = LEDPattern.solid(Color.kBlue);//LEDPattern.kOff;
+    LEDPattern ledPattern = LEDPattern.kOff;
     Boolean scroll = false;
      // Reuse buffer
     // Length is expensive to set, so only set it once, then just update data
     
     public Lights() {
         m_led.setLength(m_ledBuffer.getLength());
+        ledPattern.atBrightness(Percent.of(brightness));
+        m_led.start();
+        blue().execute();
     }
 
     public Command red(){       
@@ -39,7 +43,9 @@ public class Lights extends SubsystemBase {
             // Create an LED pattern that sets the entire strip to solid red
             ledPattern = LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kGreen, Color.kBlack);  //Red and Green switched 
             ledPattern.atBrightness(Percent.of(brightness));
-            scroll = true;
+            scroll = false;
+            ledPattern.applyTo(m_ledBuffer);
+            m_led.setData(m_ledBuffer);
             System.out.println("Red light command");
             });
         }
@@ -50,7 +56,9 @@ public class Lights extends SubsystemBase {
             // turn Leds off
             ledPattern = LEDPattern.kOff; 
             scroll = false;
-            System.out.println("Red light command");
+            ledPattern.applyTo(m_ledBuffer);
+            m_led.setData(m_ledBuffer);
+            System.out.println("Light Off command");
             });
         }
 
@@ -58,16 +66,21 @@ public class Lights extends SubsystemBase {
         return runOnce(
             () -> {
             // Create an LED pattern that sets the entire strip to solid blue
-            if (lightsoff){
+            // If already blue turn lights off 
+                if (color.matches("blue")){
+                    color="off";
+                    lightson = false;
+                    ledPattern = LEDPattern.kOff;
+                }else{
                 ledPattern = LEDPattern.solid(Color.kBlue);
                 ledPattern.atBrightness(Percent.of(brightness));
                 scroll = false;
-                lightsoff = false;
+                color = "blue";
+                lightson = true;
                 System.out.println("Blue light command");
-                lightsoff=false;
-                }else{
-                    off();
                 }
+                ledPattern.applyTo(m_ledBuffer);
+                m_led.setData(m_ledBuffer);
                 });
                 
             
@@ -79,7 +92,7 @@ public class Lights extends SubsystemBase {
             // Create an LED pattern that sets the entire strip to solid green
             ledPattern = LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlack);
             ledPattern.atBrightness(Percent.of(brightness));
-            scroll = true;
+            scroll = false;
             System.out.println("Green light command");
             });
         }
@@ -134,11 +147,10 @@ public class Lights extends SubsystemBase {
         // Scroll pattern 
         if (scroll){
             ledPattern = ledPattern.scrollAtAbsoluteSpeed(MetersPerSecond.of(0.003), LED_SPACING);
+            ledPattern.applyTo(m_ledBuffer);
+            // Set the LEDs
+            m_led.setData(m_ledBuffer);
         }
-        ledPattern.applyTo(m_ledBuffer);
-        // Set the LEDs
-        m_led.setData(m_ledBuffer);
-        m_led.start();
     }
  
 }
