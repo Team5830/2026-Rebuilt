@@ -93,6 +93,7 @@ public class SwerveSubsystem extends SubsystemBase
   public boolean driveField = false;
   public boolean brakeOn = false;
   public PathConstraints constraints;
+  public double distancetohub = 0.0;
   
   /**
    * Initialize {@link SwerveDrive} with the directory provided.
@@ -121,8 +122,14 @@ public class SwerveSubsystem extends SubsystemBase
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     try
     {
-      swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.DriveTrain.maxSpeed,
-      new Pose2d(new Translation2d(Meter.of(0.7), Meter.of(7.3)), Rotation2d.fromDegrees(0)));
+      
+      if(isRedAlliance()){
+        swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.DriveTrain.maxSpeed,
+        new Pose2d(new Translation2d(Meter.of(-0.7), Meter.of(-7.3)), Rotation2d.fromDegrees(0)));
+      }
+      else{
+        swerveDrive = new SwerveParser(directory).createSwerveDrive(Constants.DriveTrain.maxSpeed,
+        new Pose2d(new Translation2d(Meter.of(0.7), Meter.of(7.3)), Rotation2d.fromDegrees(0)));}
       // Alternative method if you don't want to supply the conversion factor via JSON files.
       // swerveDrive = new SwerveParser(directory).createSwerveDrive(maximumSpeed, angleConversionFactor, driveConversionFactor);
     } catch (Exception e){
@@ -174,6 +181,7 @@ public class SwerveSubsystem extends SubsystemBase
       vision.updatePoseEstimation(swerveDrive);
     }
     //driveFieldOriented = SmartDashboard.getBoolean("driveFieldOriented", false);
+    distancetohub = DistancetoHub();
   }
 
   @Override
@@ -284,20 +292,13 @@ public class SwerveSubsystem extends SubsystemBase
     });
   }
 
-  public Command aimAtHub()
+  public double DistancetoHub()
   {
     int targetTag = 26;
     if (isRedAlliance()){
       targetTag = 10;
     }
-    Pose2d tagpose = GetTagPose(targetTag);
-    Pose2d robotpose = getPose();
-    Transform2d transform = tagpose.minus(robotpose);
-    double degreesToTurn = transform.getRotation().getDegrees();
-    System.out.println("Turn Degrees "+degreesToTurn);
-    //return command
-    
-    return driveToPose( new Pose2d(robotpose.getX(),robotpose.getY(), Rotation2d.fromDegrees(degreesToTurn)));
+    return getDistanceToTag(targetTag);
   }
   public double getDistanceToTag(int id)
   {

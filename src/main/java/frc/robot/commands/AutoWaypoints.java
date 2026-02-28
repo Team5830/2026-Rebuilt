@@ -44,12 +44,12 @@ public final class AutoWaypoints extends Command{
              if (currentPose.getX() < 12){       
                                                //If past wall
                 if (currentPose.getY() > 4){                                    //If above midpoint
-                    WayPoint1 = convertBluetoRed(new Pose2d(5.65, 7.3, Rotation2d.k180deg));
-                    WayPoint2 = convertBluetoRed(new Pose2d(3.5, 7.3, Rotation2d.k180deg));
-                }
-                else{
                     WayPoint1 = convertBluetoRed(new Pose2d(5.72, 0.64, Rotation2d.k180deg));
                     WayPoint2 = convertBluetoRed(new Pose2d(3.49, 0.64, Rotation2d.k180deg));
+                }
+                else{
+                    WayPoint1 = convertBluetoRed(new Pose2d(5.65, 7.3, Rotation2d.k180deg));
+                    WayPoint2 = convertBluetoRed(new Pose2d(3.5, 7.3, Rotation2d.k180deg));
                 }
                 List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
                 new Pose2d(currentPose.getTranslation(), swerve.getPathVelocityHeading(swerve.getFieldVelocity(), WayPoint1)),

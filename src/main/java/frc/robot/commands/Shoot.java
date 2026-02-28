@@ -11,11 +11,12 @@ public final class Shoot extends Command {
     double DistanceToHub;
     SwerveSubsystem m_swerve;
     Intake m_intake;
-    public Shoot (Shooter m_Shooter, Intake m_intake){
+    public Shoot (Shooter m_Shooter, Intake m_intake, SwerveSubsystem m_swerve){
         addRequirements(m_Shooter);
         this.m_shooter=m_Shooter;
         this.m_intake=m_intake;
-        SmartDashboard.getNumber("DistanceToHub", 2);
+        this.m_swerve=m_swerve;
+        
        
     }
      public void SetMotorSpeed(){
@@ -28,6 +29,8 @@ public final class Shoot extends Command {
 
     @Override
     public void initialize(){
+        DistanceToHub = m_swerve.distancetohub;
+        System.out.println("DistancetoHub: " + DistanceToHub);
         SetMotorSpeed();
         SetHoodAngle();
         m_shooter.toggleShooter();

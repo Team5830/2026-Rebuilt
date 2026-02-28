@@ -54,7 +54,7 @@ public class RobotContainer {
   public RobotContainer() {
     m_swerveDrive =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
     NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
-    NamedCommands.registerCommand("ToggleShoot", new Shoot(m_Shooter, m_intake));
+    NamedCommands.registerCommand("ToggleShoot", new Shoot(m_Shooter, m_intake, m_swerveDrive));
     NamedCommands.registerCommand("ToggleIntake", m_intake.toggleIntake());
     NamedCommands.registerCommand("ToggleHopper", m_hopper.toggleHopperCommand());
     driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
@@ -118,7 +118,7 @@ public class RobotContainer {
     /* Driver Controls Port 1 */
     joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1, m_Lights));
     joystick1.back().onTrue( m_swerveDrive.ToggleBrake());
-    joystick1.y().onTrue(new Shoot(m_Shooter, m_intake));
+    joystick1.rightTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerveDrive));
     joystick1.povLeft().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     joystick1.povUp().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
     joystick1.povDown().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));

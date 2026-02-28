@@ -81,6 +81,7 @@ public final class AimAtHub extends Command {
         }
         
         SmartDashboard.putNumber("DistanceToHub", distanceToTag);
+        System.out.println("DistanceToTag: " + distanceToTag);
     }
     @Override
     public void end(boolean interrupted){
