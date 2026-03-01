@@ -9,6 +9,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.LEDPattern;
+import edu.wpi.first.wpilibj.LEDPattern.GradientType;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -24,6 +25,7 @@ public class Lights extends SubsystemBase {
     // To create a new pattern commands should just change the pattern
     LEDPattern ledPattern = LEDPattern.kOff;
     Boolean scroll = false;
+    Boolean blueOn=false, greenOn=false, redOn=false, rainbowOn=false;
      // Reuse buffer
     // Length is expensive to set, so only set it once, then just update data
     

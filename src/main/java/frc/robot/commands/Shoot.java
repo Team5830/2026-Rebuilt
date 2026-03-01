@@ -26,7 +26,7 @@ public final class Shoot extends Command {
 
     @Override
     public void initialize() {
-        double distanceToHub = m_swerve.distancetohub;
+        double distanceToHub = m_swerve.DistancetoHub();
         System.out.println("DistanceToHub: " + distanceToHub);
         SmartDashboard.putNumber("DistanceToHub", distanceToHub);
 

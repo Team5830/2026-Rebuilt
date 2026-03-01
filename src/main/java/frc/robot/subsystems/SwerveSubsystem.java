@@ -189,11 +189,7 @@ public class SwerveSubsystem extends SubsystemBase
   {
     // Select hub tag by alliance
     int targetTag = isRedAlliance() ? 10 : 26;
-    Pose2d tagpose   = GetTagPose(targetTag);
-    Pose2d robotpose = getPose();
-    double degreesToTurn = tagpose.minus(robotpose).getRotation().getDegrees();
-    return driveToPose(new Pose2d(robotpose.getX(), robotpose.getY(),
-                                  Rotation2d.fromDegrees(degreesToTurn)));
+    return getDistanceToTag(targetTag);
   }
 
   public double getDistanceToTag(int id)
