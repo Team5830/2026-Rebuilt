@@ -37,95 +37,78 @@ public class Lights extends SubsystemBase {
         blue().execute();
     }
 
-    public Command red(){       
-        return runOnce(
-            () -> {
-            // Create an LED pattern that sets the entire strip to solid red
-            ledPattern = LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kGreen, Color.kBlack);  //Red and Green switched 
-            ledPattern.atBrightness(Percent.of(brightness));
+    /** Shared helper: applies a pattern or turns off if the same color is already active. */
+    private void applyToggle(String name, LEDPattern pattern, boolean scrolling) {
+        if (color.equals(name)) {
+            // Same color requested again — turn off
+            color = "off";
+            lightson = false;
+            ledPattern = LEDPattern.kOff;
+            scroll = false;
+            System.out.println(name + " toggled OFF");
+        } else {
+            color = name;
+            lightson = true;
+            ledPattern = pattern.atBrightness(Percent.of(brightness));
+            scroll = scrolling;
+            System.out.println(name + " toggled ON");
+        }
+        ledPattern.applyTo(m_ledBuffer);
+        m_led.setData(m_ledBuffer);
+    }
+
+    public Command red() {
+        return runOnce(() -> applyToggle("red",
+            LEDPattern.gradient(GradientType.kDiscontinuous, Color.kGreen, Color.kBlack), false));
+    }
+
+    public Command off() {
+        return runOnce(() -> {
+            color = "off";
+            lightson = false;
+            ledPattern = LEDPattern.kOff;
             scroll = false;
             ledPattern.applyTo(m_ledBuffer);
             m_led.setData(m_ledBuffer);
-            System.out.println("Red light command");
-            });
-        }
-    
-    public Command off(){       
-        return runOnce(
-            () -> {
-            // turn Leds off
-            ledPattern = LEDPattern.kOff; 
+            System.out.println("Lights off");
+        });
+    }
+
+    public Command blue() {
+        return runOnce(() -> applyToggle("blue", LEDPattern.solid(Color.kBlue), false));
+    }
+
+    public Command green() {
+        return runOnce(() -> applyToggle("green",
+            LEDPattern.gradient(GradientType.kDiscontinuous, Color.kRed, Color.kBlack), false));
+            
+    }
+
+    public Command green_on() {
+        return runOnce(() -> {
+            LEDPattern.gradient(GradientType.kDiscontinuous, Color.kRed, Color.kBlack);
+            color = "green";
+            lightson = true;
+            ledPattern = ledPattern.atBrightness(Percent.of(brightness));
             scroll = false;
+            System.out.println(color + " turned ON");
             ledPattern.applyTo(m_ledBuffer);
             m_led.setData(m_ledBuffer);
-            System.out.println("Light Off command");
-            });
-        }
+        });
+    }
 
-    public Command blue(){       
-        return runOnce(
-            () -> {
-            // Create an LED pattern that sets the entire strip to solid blue
-            // If already blue turn lights off 
-                if (color.matches("blue")){
-                    color="off";
-                    lightson = false;
-                    ledPattern = LEDPattern.kOff;
-                }else{
-                ledPattern = LEDPattern.solid(Color.kBlue);
-                ledPattern.atBrightness(Percent.of(brightness));
-                scroll = false;
-                color = "blue";
-                lightson = true;
-                System.out.println("Blue light command");
-                }
-                ledPattern.applyTo(m_ledBuffer);
-                m_led.setData(m_ledBuffer);
-                });
-        }
-    
-    public Command green(){       
-        return runOnce(
-            () -> {
-            // Create an LED pattern that sets the entire strip to solid green
-            ledPattern = LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlack);
-            ledPattern.atBrightness(Percent.of(brightness));
-            scroll = false;
-            System.out.println("Green light command");
-            });
-        }
-    public Command pink(){       
-        return runOnce(
-            () -> {
-            // Create an LED pattern that sets the entire strip to solid green
-            ledPattern = LEDPattern.solid(Color.kDarkCyan);
-            ledPattern.atBrightness(Percent.of(brightness));
-            scroll = false;
-            System.out.println("Pink light command");
-            });
-        }
+    public Command pink() {
+        return runOnce(() -> applyToggle("pink", LEDPattern.solid(Color.kDarkCyan), false));
+    }
 
-    public Command rainbow(){       
-        return runOnce(
-            () -> {
-            // Create an LED pattern that sets the entire strip to solid green
-            ledPattern = LEDPattern.rainbow(255, 40);
-            scroll = true;
-            System.out.println("Rainbow light command");
-            });
-        }
+    public Command rainbow() {
+        return runOnce(() -> applyToggle("rainbow", LEDPattern.rainbow(255, 40), true));
+    }
 
-    public Command gradient(){
-        return runOnce(
-            () -> {
-                // Create an LED pattern that displays a red-to-blue gradient.
-                // The LED strip will be red at one end and blue at the other.
-                ledPattern = LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kCyan, Color.kBlack);
-                ledPattern.atBrightness(Percent.of(brightness));
-                System.out.println("Gradient");
-                scroll = true;
-            }
-        );}
+    public Command gradient() {
+        return runOnce(() -> applyToggle("gradient",
+            LEDPattern.gradient(GradientType.kDiscontinuous, Color.kCyan, Color.kBlack), true));
+    }
 
     public Command pbar(int count){       
         return runOnce(

@@ -27,6 +27,7 @@ import javax.imageio.plugins.tiff.GeoTIFFTagSet;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathPlannerPath;
 
@@ -70,7 +71,6 @@ public class RobotContainer {
       PathPlannerAuto AutoPath = new PathPlannerAuto(selectedOption);
       List<PathPlannerPath> pathsInAuto = null;
       try{
-        //pathsInAuto = AutoPath.getPathGroupFromAutoFile(selectedOption.getName());
         pathsInAuto = PathPlannerAuto.getPathGroupFromAutoFile(selectedOption.getName());
       }catch( Exception ex){ 
         System.out.println("Failed to parse autopath"+selectedOption.getName());
@@ -108,13 +108,20 @@ public class RobotContainer {
         Call just one drive command here, split options in servedrive.
       */
     m_swerveDrive.setDefaultCommand(oneDrive);
+
     SmartDashboard.putData("Auto Chooser", autoChooser);
     SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
-    SmartDashboard.putData("drive",driveChooser);
+    SmartDashboard.putData("drive",new AutoWaypoints(m_swerveDrive,  new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     SmartDashboard.putData("Blue Lights",m_Lights.blue());
     SmartDashboard.putData("Lights off",m_Lights.off());
     SmartDashboard.putData("Red Lights",m_Lights.red());
     SmartDashboard.putData("Rainbow Lights",m_Lights.rainbow());
+    SmartDashboard.putData("Left",new AutoWaypoints(m_swerveDrive, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
+    SmartDashboard.putData("Up", new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
+    SmartDashboard.putData("Down",new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
+    SmartDashboard.putData("Right", new AutoWaypoints(m_swerveDrive, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
+    //Warm up Path following commands
+    FollowPathCommand.warmupCommand();
     // Configure the trigger bindings
     configureBindings();
   }

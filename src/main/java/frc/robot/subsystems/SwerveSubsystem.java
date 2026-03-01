@@ -140,11 +140,13 @@ public class SwerveSubsystem extends SubsystemBase
       swerveDrive.setModuleEncoderAutoSynchronize(false,
                                                   1); // Enable if you want to resynchronize your absolute encoders and motor encoders periodically when they are not moving.
       
-      if (visionDriveTest && !RobotBase.isSimulation())
-      {
+      //if (visionDriveTest && !RobotBase.isSimulation())
+      //{
         // Stop the odometry thread if we are using vision that way we can synchronize updates better.
-        swerveDrive.stopOdometryThread();
-      }
+        //swerveDrive.stopOdometryThread();
+      //}
+      //SwerveDriveTelemetry.verbosity = TelemetryVerbosity.LOW;  // or NONE during competition
+
       setupPhotonVision();
       setupPathPlanner();
     } catch (Exception e)
@@ -168,7 +170,7 @@ public class SwerveSubsystem extends SubsystemBase
   @Override
   public void periodic()
   {
-    swerveDrive.updateOdometry();
+    //swerveDrive.updateOdometry();
     // When vision is enabled we must manually update odometry in SwerveDrive  
     if (visionDriveTest && !RobotBase.isSimulation())
     {
