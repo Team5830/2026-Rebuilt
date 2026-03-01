@@ -3,100 +3,104 @@ package frc.robot.commands;
 import frc.robot.Constants;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.SwerveSubsystem;
+import frc.robot.subsystems.Lights;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
-/**
- * Aims the robot at the scoring hub for the current alliance.
- *
- * <p>On initialize, computes the hub angle once and schedules a drive command that
- * locks the heading to the hub while the driver can still translate freely.
- * The drive command automatically cancels when the driver pushes the right stick.
- */
 public final class AimAtHub extends Command {
+    // Hub is 24 inches (converted to meters) behind the tag
+    private static final double HUB_OFFSET_M = 24 * 2.54 / 100.0;
+    private static final int    BLUE_TAG      = 26;
+    private static final int    RED_TAG       = 10;
+    private static final double AIM_TOLERANCE_DEG = 2.0;
 
-    // How far behind the tag the actual hub centre is (metres)
-    private static final double HUB_OFFSET_M = Units.inchesToMeters(24);
-
-    // Blue/red hub tag IDs (must match SwerveSubsystem constants)
-    private static final int HUB_TAG_BLUE = 26;
-    private static final int HUB_TAG_RED  = 10;
-
-    private final SwerveSubsystem        swerve;
-    private final CommandXboxController  joystick;
-    private final Lights                 lights;
+    private final SwerveSubsystem    swerve;
+    private final edu.wpi.first.wpilibj2.command.button.CommandXboxController joystick;
+    private final Lights             lights;
 
     private int     targetTag;
     private double  targetAngleDegrees;
-    private Command aimCmd;
+    private Command aimcmd;
 
-    public AimAtHub(SwerveSubsystem swerve, CommandXboxController joystick, Lights lights) {
+    public AimAtHub(SwerveSubsystem swerve,
+                    edu.wpi.first.wpilibj2.command.button.CommandXboxController joystick,
+                    Lights lights) {
         addRequirements(swerve);
         this.swerve   = swerve;
         this.joystick = joystick;
         this.lights   = lights;
     }
 
-    /** Angle (radians) from the robot to the hub centre behind the target tag. */
+    private boolean isRedAlliance() {
+        var alliance = DriverStation.getAlliance();
+        return alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red;
+    }
+
+    /** Returns the angle (radians) from the robot to the hub behind the selected tag. */
     private double angleToHub() {
-        Pose2d tagPose  = swerve.GetTagPose(targetTag);
-        double offsetX  = swerve.isRedAlliance() ? -HUB_OFFSET_M : HUB_OFFSET_M;
-        Pose2d hubPose  = new Pose2d(tagPose.getX() + offsetX, tagPose.getY(), tagPose.getRotation());
-        Pose2d robotPose = swerve.getPose();
-        return Math.atan2(hubPose.getY() - robotPose.getY(), hubPose.getX() - robotPose.getX());
+        boolean red     = isRedAlliance();
+        Pose2d tagpose  = swerve.GetTagPose(targetTag);
+        // Offset toward hub behind tag
+        double offsetX  = red ? -HUB_OFFSET_M : HUB_OFFSET_M;
+        Pose2d hubpose  = new Pose2d(tagpose.getX() + offsetX, tagpose.getY(), tagpose.getRotation());
+        Pose2d robot    = swerve.getPose();
+        return Math.atan2(hubpose.getY() - robot.getY(), hubpose.getX() - robot.getX());
     }
 
     @Override
     public void initialize() {
-        targetTag = swerve.isRedAlliance() ? HUB_TAG_RED : HUB_TAG_BLUE;
+        targetTag = isRedAlliance() ? RED_TAG : BLUE_TAG;
 
-        Pose2d tagPose = swerve.GetTagPose(targetTag);
+        Pose2d tagPose     = swerve.GetTagPose(targetTag);
+        double distanceToTag = swerve.getDistanceToTag(targetTag);
         double targetAngleRad = angleToHub();
         targetAngleDegrees    = Math.toDegrees(targetAngleRad);
-        double distanceToTag  = swerve.getDistanceToTag(targetTag);
 
-        System.out.printf("Tag: %d  X: %.2f  Y: %.2f  Heading: %.1f°  Distance: %.2f m%n",
-            targetTag, tagPose.getX(), tagPose.getY(), targetAngleDegrees, distanceToTag);
+        System.out.printf("AimAtHub: Tag=%d  X=%.2f  Y=%.2f  Heading=%.1f°  Dist=%.2fm%n",
+                          targetTag, tagPose.getX(), tagPose.getY(),
+                          targetAngleDegrees, distanceToTag);
 
-        // Drive command: hold heading on hub, cancel when driver steers
-        aimCmd = swerve.oneDriveCommand(
+        aimcmd = swerve.oneDriveCommand(
             () -> MathUtil.applyDeadband(-joystick.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND),
             () -> MathUtil.applyDeadband(-joystick.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND),
             () -> Math.sin(angleToHub()),
             () -> Math.cos(angleToHub())
         ).onlyWhile(() -> Math.hypot(joystick.getRawAxis(4), joystick.getRawAxis(5)) < 0.1);
 
-        aimCmd.initialize();
+        aimcmd.initialize();
     }
 
     @Override
     public void execute() {
-        aimCmd.execute();
+        aimcmd.execute();
+
         double distanceToTag = swerve.getDistanceToTag(targetTag);
-        double headingError  = Math.abs(swerve.getPose().getRotation().getDegrees() - targetAngleDegrees);
-
-        if (headingError < 2.0) {
-            lights.green().schedule();
-        }
-
         SmartDashboard.putNumber("DistanceToHub", distanceToTag);
+
+        double headingError = Math.abs(swerve.getPose().getRotation().getDegrees() - targetAngleDegrees);
+        System.out.printf("AimAtHub: Tag=%d Heading=%.1f° Error=%.1f° Dist=%.2fm%n",
+                          targetTag, targetAngleDegrees, headingError, distanceToTag);
+
+        if (headingError < AIM_TOLERANCE_DEG) {
+            lights.green_on().schedule();
+        }else{
+            lights.off().schedule();
+        }
     }
 
     @Override
     public void end(boolean interrupted) {
-        System.out.println("AimAtHub: cancelling");
-        if (aimCmd != null) aimCmd.cancel();
+        System.out.println("AimAtHub ended (interrupted=" + interrupted + ")");
+        if (aimcmd != null) aimcmd.cancel();
+        lights.off().schedule();
     }
 
     @Override
     public boolean isFinished() {
-        return false;
+        return aimcmd != null && aimcmd.isFinished();
     }
 }

@@ -14,109 +14,109 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Lights extends SubsystemBase {
-
-    private final AddressableLED       m_led       = new AddressableLED(1);
-    private final AddressableLEDBuffer m_ledBuffer = new AddressableLEDBuffer(150);
-    private final Distance             LED_SPACING = Meters.of(16.0 * 12 * 0.0254 / 150);
-
-    private static final int BRIGHTNESS = 20;
-
-    // Current active pattern and scroll flag
-    private LEDPattern currentPattern = LEDPattern.solid(Color.kBlue);
-    private boolean    scroll         = false;
-
-    // Toggle state — tracks the last color set by each toggle command
-    private boolean redOn     = false;
-    private boolean blueOn    = true;  // default on at boot
-    private boolean greenOn   = false;
-    private boolean rainbowOn = false;
-
+    AddressableLED m_led  = new AddressableLED(1);
+    AddressableLEDBuffer m_ledBuffer = new AddressableLEDBuffer(150);
+    Distance LED_SPACING = Meters.of(16.0*12*0.0254 / 150);
+    int brightness = 20;
+    boolean lightson=false;
+    String color = "off";
+    // The below pattern should be periodically applied
+    // To create a new pattern commands should just change the pattern
+    LEDPattern ledPattern = LEDPattern.kOff;
+    Boolean scroll = false;
+     // Reuse buffer
+    // Length is expensive to set, so only set it once, then just update data
+    
     public Lights() {
         m_led.setLength(m_ledBuffer.getLength());
+        ledPattern.atBrightness(Percent.of(brightness));
         m_led.start();
+        blue().execute();
     }
 
-    // ── Internal helpers ──────────────────────────────────────────────────────
-
-    private void setPattern(LEDPattern pattern, boolean scrolling) {
-        currentPattern = pattern.atBrightness(Percent.of(BRIGHTNESS));
-        scroll = scrolling;
+    /** Shared helper: applies a pattern or turns off if the same color is already active. */
+    private void applyToggle(String name, LEDPattern pattern, boolean scrolling) {
+        if (color.equals(name)) {
+            // Same color requested again — turn off
+            color = "off";
+            lightson = false;
+            ledPattern = LEDPattern.kOff;
+            scroll = false;
+            System.out.println(name + " toggled OFF");
+        } else {
+            color = name;
+            lightson = true;
+            ledPattern = pattern.atBrightness(Percent.of(brightness));
+            scroll = scrolling;
+            System.out.println(name + " toggled ON");
+        }
+        ledPattern.applyTo(m_ledBuffer);
+        m_led.setData(m_ledBuffer);
     }
-
-    // ── Individual color commands ─────────────────────────────────────────────
 
     public Command red() {
-        return runOnce(() -> {
-            setPattern(LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kGreen, Color.kBlack), true);
-            System.out.println("Lights: red");
-        });
+        return runOnce(() -> applyToggle("red",
+            LEDPattern.gradient(GradientType.kDiscontinuous, Color.kGreen, Color.kBlack), false));
     }
 
     public Command off() {
         return runOnce(() -> {
-            currentPattern = LEDPattern.kOff;
+            color = "off";
+            lightson = false;
+            ledPattern = LEDPattern.kOff;
             scroll = false;
-            System.out.println("Lights: off");
+            ledPattern.applyTo(m_ledBuffer);
+            m_led.setData(m_ledBuffer);
+            System.out.println("Lights off");
         });
     }
 
     public Command blue() {
-        return runOnce(() -> {
-            setPattern(LEDPattern.solid(Color.kBlue), false);
-            System.out.println("Lights: blue");
-        });
+        return runOnce(() -> applyToggle("blue", LEDPattern.solid(Color.kBlue), false));
     }
 
     public Command green() {
+        return runOnce(() -> applyToggle("green",
+            LEDPattern.gradient(GradientType.kDiscontinuous, Color.kRed, Color.kBlack), false));
+            
+    }
+
+    public Command green_on() {
         return runOnce(() -> {
-            setPattern(LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlack), true);
-            System.out.println("Lights: green");
+            LEDPattern.gradient(GradientType.kDiscontinuous, Color.kRed, Color.kBlack);
+            color = "green";
+            lightson = true;
+            ledPattern = ledPattern.atBrightness(Percent.of(brightness));
+            scroll = false;
+            System.out.println(color + " turned ON");
+            ledPattern.applyTo(m_ledBuffer);
+            m_led.setData(m_ledBuffer);
         });
     }
 
     public Command pink() {
-        return runOnce(() -> {
-            setPattern(LEDPattern.solid(Color.kDarkCyan), false);
-            System.out.println("Lights: pink");
-        });
+        return runOnce(() -> applyToggle("pink", LEDPattern.solid(Color.kDarkCyan), false));
     }
 
     public Command rainbow() {
-        return runOnce(() -> {
-            setPattern(LEDPattern.rainbow(255, 40), true);
-            System.out.println("Lights: rainbow");
-        });
+        return runOnce(() -> applyToggle("rainbow", LEDPattern.rainbow(255, 40), true));
     }
 
     public Command gradient() {
-        return runOnce(() -> {
-            setPattern(LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kCyan, Color.kBlack), true);
-            System.out.println("Lights: gradient");
-        });
+        return runOnce(() -> applyToggle("gradient",
+            LEDPattern.gradient(GradientType.kDiscontinuous, Color.kCyan, Color.kBlack), true));
     }
 
-    public Command pbar(int count) {
-        return runOnce(() -> {
-            setPattern(LEDPattern.progressMaskLayer(() -> count / 10.0), false);
-        });
-    }
-
-    // ── Toggle commands ───────────────────────────────────────────────────────
-
-    /**
-     * Toggle red lights on/off. Turns off (LEDPattern.kOff) when toggled off.
-     */
-    public Command toggleRed() {
-        return runOnce(() -> {
-            redOn = !redOn;
-            if (redOn) {
-                red().schedule();
-            } else {
-                off().schedule();
-            }
-            System.out.println("Lights: red toggled " + (redOn ? "ON" : "OFF"));
-        });
-    }
+    public Command pbar(int count){       
+        return runOnce(
+            () -> {
+            // Create an LED pattern that displays a black-and-white mask that displays the current height of an elevator
+            // mechanism. This can be combined with other patterns to change the displayed color to something other than white.
+            ledPattern = LEDPattern.progressMaskLayer(() -> count / 10);
+            ledPattern.atBrightness(Percent.of(brightness));
+            scroll = false;
+            });
+        }
 
     /**
      * Toggle blue lights on/off.
@@ -192,11 +192,14 @@ public class Lights extends SubsystemBase {
 
     @Override
     public void periodic() {
-        LEDPattern patternToApply = scroll
-            ? currentPattern.scrollAtAbsoluteSpeed(MetersPerSecond.of(0.003), LED_SPACING)
-            : currentPattern;
-        patternToApply.applyTo(m_ledBuffer);
-        m_led.setData(m_ledBuffer);
+        //LEDPattern m_rainbow = LEDPattern.rainbow(255, 10);
+        // Scroll pattern 
+        if (scroll){
+            ledPattern = ledPattern.scrollAtAbsoluteSpeed(MetersPerSecond.of(0.003), LED_SPACING);
+            ledPattern.applyTo(m_ledBuffer);
+            // Set the LEDs
+            m_led.setData(m_ledBuffer);
+        }
     }
 }
 

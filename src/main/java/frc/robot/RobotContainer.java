@@ -12,8 +12,6 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.subsystems.SwerveSubsystem;
-import frc.robot.subsystems.Shooter;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -23,12 +21,15 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.io.File;
-import frc.robot.subsystems.Lights;
+import java.util.List;
+
+import javax.imageio.plugins.tiff.GeoTIFFTagSet;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.commands.PathPlannerAuto;
-import frc.robot.subsystems.Hopper;
+import com.pathplanner.lib.path.PathPlannerPath;
 
 
 /**
@@ -68,10 +69,23 @@ public class RobotContainer {
     autoChooser.onChange((selectedOption) -> {
       // This code will be executed whenever the selected option changes
       PathPlannerAuto AutoPath = new PathPlannerAuto(selectedOption);
-      //m_swerveDrive.resetOdometry(AutoPath.getStartingPose());
-      m_swerveDrive.resetOdometry(new Pose2d(0.7,7.3,Rotation2d.fromDegrees(0)));
-      System.out.println("Selected option: " + selectedOption);
+      List<PathPlannerPath> pathsInAuto = null;
+      try{
+        pathsInAuto = PathPlannerAuto.getPathGroupFromAutoFile(selectedOption.getName());
+      }catch( Exception ex){ 
+        System.out.println("Failed to parse autopath"+selectedOption.getName());
 
+      }
+      Pose2d startingPose = new Pose2d(0,0,Rotation2d.kZero);
+      if (!pathsInAuto.isEmpty()) {
+        PathPlannerPath path0 = pathsInAuto.get(0);
+        startingPose = new Pose2d(path0.getPoint(0).position, path0.getIdealStartingState().rotation());
+      }
+      m_swerveDrive.resetOdometry(startingPose);
+    
+      System.out.println("Selected option: " + selectedOption + "   "+selectedOption.getName());
+      System.out.println("pose: "+startingPose.getX()+", "+startingPose.getY());
+      
       // Perform actions based on the selected option
       });
 
@@ -94,13 +108,20 @@ public class RobotContainer {
         Call just one drive command here, split options in servedrive.
       */
     m_swerveDrive.setDefaultCommand(oneDrive);
+
     SmartDashboard.putData("Auto Chooser", autoChooser);
     SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
-    SmartDashboard.putData("drive",driveChooser);
+    SmartDashboard.putData("drive",new AutoWaypoints(m_swerveDrive,  new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     SmartDashboard.putData("Blue Lights",m_Lights.blue());
     SmartDashboard.putData("Lights off",m_Lights.off());
     SmartDashboard.putData("Red Lights",m_Lights.red());
     SmartDashboard.putData("Rainbow Lights",m_Lights.rainbow());
+    SmartDashboard.putData("Left",new AutoWaypoints(m_swerveDrive, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
+    SmartDashboard.putData("Up", new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
+    SmartDashboard.putData("Down",new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
+    SmartDashboard.putData("Right", new AutoWaypoints(m_swerveDrive, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
+    //Warm up Path following commands
+    FollowPathCommand.warmupCommand();
     // Configure the trigger bindings
     configureBindings();
   }
@@ -141,9 +162,9 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
 
     Command selected = autoChooser.getSelected();
-    String autoName = autoChooser.getSelected().getName();
-    PathPlannerAuto AutoPath = new PathPlannerAuto(autoName);
-    m_swerveDrive.resetOdometry(AutoPath.getStartingPose());
+    //String autoName = autoChooser.getSelected().getName();
+    //PathPlannerAuto AutoPath = new PathPlannerAuto(autoName);
+    //m_swerveDrive.resetOdometry(AutoPath.getStartingPose());
     return selected;
     
   }
