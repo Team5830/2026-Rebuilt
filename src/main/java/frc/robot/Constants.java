@@ -69,7 +69,7 @@ public final class Constants {
     public static final Time kEndTriggerDebounce = Seconds.of(0.04);
     public static final PIDConstants kTranslationPID = new PIDConstants(5.5,0,0);
     public static final PIDConstants kRotationPID = new PIDConstants(5.0,0,0);
-    public static final PathConstraints kAutoPathConstraints = new PathConstraints(2.0, 2.0, 1/2 * Math.PI, 1 * Math.PI); //? consider making these more aggressive
+    public static final PathConstraints kAutoPathConstraints = new PathConstraints(2.0, 2.0, 0.5 * Math.PI, 1.0 * Math.PI); //? consider making these more aggressive
  
     public static final PPHolonomicDriveController kDriveController = new PPHolonomicDriveController(
       AutoAlign.kTranslationPID, 
