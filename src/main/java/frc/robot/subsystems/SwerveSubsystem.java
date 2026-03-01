@@ -184,7 +184,8 @@ public class SwerveSubsystem extends SubsystemBase
     });
   }
 
-  public Command aimAtHub()
+  /** Get distance to the hub (alliance-aware). */
+  public double DistancetoHub()
   {
     // Select hub tag by alliance
     int targetTag = isRedAlliance() ? 10 : 26;
@@ -518,6 +519,7 @@ public class SwerveSubsystem extends SubsystemBase
     return runOnce(this::brake);
   }
 
+  /** Internal brake toggle: locks + brake on, or releases both. */
   public void brake()
   {
     brakeOn = !brakeOn;
@@ -571,6 +573,11 @@ public class SwerveSubsystem extends SubsystemBase
     return AutoBuilder.followPath(path);
   }
 
+  /**
+   * Follow a pre-built PathPlanner path.
+   *
+   * @param path The {@link PathPlannerPath} to follow.
+   */
   public Command drivePath(PathPlannerPath path)
   {
     return AutoBuilder.followPath(path);

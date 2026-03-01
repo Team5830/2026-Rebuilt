@@ -1,20 +1,17 @@
 
 package frc.robot.subsystems;
+
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Percent;
 
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.units.measure.LinearVelocity;
-import edu.wpi.first.units.measure.Velocity;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj.LEDPattern.GradientType;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard; 
 
 public class Lights extends SubsystemBase {
     AddressableLED m_led  = new AddressableLED(1);
@@ -121,6 +118,77 @@ public class Lights extends SubsystemBase {
             });
         }
 
+    /**
+     * Toggle blue lights on/off.
+     */
+    public Command toggleBlue() {
+        return runOnce(() -> {
+            blueOn = !blueOn;
+            if (blueOn) {
+                blue().schedule();
+            } else {
+                off().schedule();
+            }
+            System.out.println("Lights: blue toggled " + (blueOn ? "ON" : "OFF"));
+        });
+    }
+
+    /**
+     * Toggle green lights on/off.
+     */
+    public Command toggleGreen() {
+        return runOnce(() -> {
+            greenOn = !greenOn;
+            if (greenOn) {
+                green().schedule();
+            } else {
+                off().schedule();
+            }
+            System.out.println("Lights: green toggled " + (greenOn ? "ON" : "OFF"));
+        });
+    }
+
+    /**
+     * Toggle rainbow on/off.
+     */
+    public Command toggleRainbow() {
+        return runOnce(() -> {
+            rainbowOn = !rainbowOn;
+            if (rainbowOn) {
+                rainbow().schedule();
+            } else {
+                off().schedule();
+            }
+            System.out.println("Lights: rainbow toggled " + (rainbowOn ? "ON" : "OFF"));
+        });
+    }
+
+    /**
+     * Cycle through colors in order: Blue → Red → Green → Rainbow → Off → Blue…
+     */
+    public Command cycleColor() {
+        return runOnce(() -> {
+            if (blueOn) {
+                blueOn = false; redOn = true;
+                red().schedule();
+            } else if (redOn) {
+                redOn = false; greenOn = true;
+                green().schedule();
+            } else if (greenOn) {
+                greenOn = false; rainbowOn = true;
+                rainbow().schedule();
+            } else if (rainbowOn) {
+                rainbowOn = false;
+                off().schedule();
+            } else {
+                blueOn = true;
+                blue().schedule();
+            }
+            System.out.println("Lights: cycled color");
+        });
+    }
+
+    // ── Periodic ─────────────────────────────────────────────────────────────
 
     @Override
     public void periodic() {
@@ -133,7 +201,6 @@ public class Lights extends SubsystemBase {
             m_led.setData(m_ledBuffer);
         }
     }
- 
 }
 
     

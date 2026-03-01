@@ -82,10 +82,10 @@ public final class Constants {
     );
   }
   public static final class shooter {
-    public static final int feedmotor = 22;
-    public static final int shootermotor = 13;
-    public static final int shootermotor2 = 14;
-    public static final int hoodmotor = 24;
+    public static final int feedmotor = 13;
+    public static final int shootermotor = 10;
+    public static final int shootermotor2 = 11;
+    public static final int hoodmotor = 12;
     public static final double ForwardLimit = 8.0;
     public static final double ReverseLimit = 0.0;
     public static final double hoodp = 0.1;
@@ -102,13 +102,13 @@ public final class Constants {
     public static final double reverselimit = 1.0; 
   }
   public static final class hopper {
-    public static final int hoppermotor = 21;
+    public static final int hoppermotor = 15;
     public static final double forwardlimit = 1.0; 
     public static final double reverselimit = 0; 
   }
   public static final class intake {
-    public static final int motor1ID = 12;
-    public static final int motor2ID = 13;
+    public static final int motor1ID = 9;
+    public static final int motor2ID = 14;
   }
   public static final class vision {
     // Constants such as camera and target height stored. Change per robot and goal!
