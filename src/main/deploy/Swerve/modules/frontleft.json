@@ -1,17 +1,17 @@
 {
   "location": {
-    "front": 12.6,
-    "left": 12.6
+    "front": 9,
+    "left": 12
   },
   "drive": {
     "type": "sparkmax",
-    "id": 7,
-    "canbus": 7
+    "id": 5,
+    "canbus": 5
   },
   "angle": {
     "type": "sparkmax",
-    "id": 8,
-    "canbus": 8
+    "id": 6,
+    "canbus": 6
   },
   "encoder": {
     "type": "attached",
