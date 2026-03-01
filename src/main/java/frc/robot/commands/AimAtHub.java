@@ -73,11 +73,12 @@ public final class AimAtHub extends Command {
             () -> Math.cos(angleToHub())
         ).onlyWhile(() -> Math.hypot(joystick.getRawAxis(4), joystick.getRawAxis(5)) < 0.1);
 
-        CommandScheduler.getInstance().schedule(aimCmd);
+        aimCmd.initialize();
     }
 
     @Override
     public void execute() {
+        aimCmd.execute();
         double distanceToTag = swerve.getDistanceToTag(targetTag);
         double headingError  = Math.abs(swerve.getPose().getRotation().getDegrees() - targetAngleDegrees);
 

@@ -6,22 +6,26 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkFlexConfig;
+
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants;
+import com.revrobotics.spark.SparkBase;
 
 public class Shooter extends SubsystemBase {
 
     private final SparkMax     feedmotor;
-    private final SparkMax     shootermotor;
-    private final SparkMax     shootermotor2;
+    private final SparkFlex     shootermotor;
+    private final SparkFlex     shootermotor2;
     private final SparkMax     hoodmotor;
     private final SparkClosedLoopController hoodController;
     private final RelativeEncoder           hoodEncoder;
@@ -31,11 +35,12 @@ public class Shooter extends SubsystemBase {
 
     @SuppressWarnings("removal")
     public Shooter() {
-        SparkMax feed = null, shoot1 = null, shoot2 = null, hood = null;
+        SparkMax feed = null, hood = null;
+        SparkFlex shoot1 = null, shoot2 = null;
         try {
             feed   = new SparkMax(Constants.shooter.feedmotor,    MotorType.kBrushless);
-            shoot1 = new SparkMax(Constants.shooter.shootermotor, MotorType.kBrushless);
-            shoot2 = new SparkMax(Constants.shooter.shootermotor2, MotorType.kBrushless);
+            shoot1 = new SparkFlex(Constants.shooter.shootermotor, MotorType.kBrushless);
+            shoot2 = new SparkFlex(Constants.shooter.shootermotor2, MotorType.kBrushless);
             hood   = new SparkMax(Constants.shooter.hoodmotor,    MotorType.kBrushless);
         } catch (RuntimeException ex) {
             DriverStation.reportError("Error instantiating Shooter: " + ex.getMessage(), true);
@@ -46,18 +51,18 @@ public class Shooter extends SubsystemBase {
         hoodmotor     = hood;
 
         // Shooter motor config
-        SparkMaxConfig shooterConfig = new SparkMaxConfig();
+        SparkFlexConfig shooterConfig = new SparkFlexConfig();
         shooterConfig.idleMode(IdleMode.kCoast);
         shooterConfig.closedLoop
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .pid(0.003, 0.0, 0.18);
-        configureMotor(shootermotor, shooterConfig, "shooter");
+        configureMotorFlex(shootermotor, shooterConfig, "shooter");
 
         // Follower motor config
-        SparkMaxConfig shooter2Config = new SparkMaxConfig();
+        SparkFlexConfig shooter2Config = new SparkFlexConfig();
         shooter2Config.idleMode(IdleMode.kCoast);
         shooter2Config.follow(shootermotor, true);
-        configureMotor(shootermotor2, shooter2Config, "shooter2");
+        configureMotorFlex(shootermotor2, shooter2Config, "shooter2");
 
         // Hood motor config
         SparkMaxConfig hoodConfig = new SparkMaxConfig();
@@ -83,6 +88,13 @@ public class Shooter extends SubsystemBase {
 
     /** Configure a motor and report any error. */
     private void configureMotor(SparkMax motor, SparkMaxConfig config, String name) {
+        if (motor == null) return;
+        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+        if (err != REVLibError.kOk) {
+            DriverStation.reportError("Failed to configure " + name + " motor: " + err, true);
+        }
+    }
+    private void configureMotorFlex(SparkFlex motor, SparkFlexConfig config, String name) {
         if (motor == null) return;
         REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
         if (err != REVLibError.kOk) {

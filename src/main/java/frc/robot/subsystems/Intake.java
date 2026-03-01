@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -10,16 +11,17 @@ import frc.robot.Constants;
 public class Intake extends SubsystemBase {
 
     private final SparkFlex intakeMotor1;
-    private final SparkFlex intakeMotor2;
+    private final SparkMax intakeMotor2;
 
     private boolean intakeIsOn = false;
     private boolean feedIsOn   = false;
 
     public Intake() {
-        SparkFlex m1 = null, m2 = null;
+        SparkFlex m1 = null;
+        SparkMax m2 = null;
         try {
             m1 = new SparkFlex(Constants.intake.motor1ID, MotorType.kBrushless);
-            m2 = new SparkFlex(Constants.intake.motor2ID, MotorType.kBrushless);
+            m2 = new SparkMax(Constants.intake.motor2ID, MotorType.kBrushless);
         } catch (RuntimeException ex) {
             DriverStation.reportError("Error instantiating Intake Motors: " + ex.getMessage(), true);
         }
