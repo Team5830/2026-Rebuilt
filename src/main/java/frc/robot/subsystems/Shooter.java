@@ -98,6 +98,7 @@ public class Shooter extends SubsystemBase {
         }
          HoodMotorController = hoodmotor.getClosedLoopController();
         // Reset the position to 0 to start within the range of the soft limits
+        encoder = hoodmotor.getEncoder();
         encoder.setPosition(0);
     }
 
