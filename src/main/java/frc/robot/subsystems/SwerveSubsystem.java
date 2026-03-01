@@ -145,8 +145,9 @@ public class SwerveSubsystem extends SubsystemBase
         // Stop the odometry thread if we are using vision that way we can synchronize updates better.
         //swerveDrive.stopOdometryThread();
       //}
-      //SwerveDriveTelemetry.verbosity = TelemetryVerbosity.LOW;  // or NONE during competition
-
+      if (RobotBase.isReal()){
+        SwerveDriveTelemetry.verbosity = TelemetryVerbosity.LOW;  // or NONE during competition
+      }
       setupPhotonVision();
       setupPathPlanner();
     } catch (Exception e)
