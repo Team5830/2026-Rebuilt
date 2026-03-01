@@ -5,13 +5,13 @@
   },
   "drive": {
     "type": "sparkmax",
-    "id": 1,
-    "canbus": 1
+    "id": 4,
+    "canbus": 4
   },
   "angle": {
     "type": "sparkmax",
-    "id": 2,
-    "canbus": 2
+    "id": 3,
+    "canbus": 3
   },
   "encoder": {
     "type": "attached",

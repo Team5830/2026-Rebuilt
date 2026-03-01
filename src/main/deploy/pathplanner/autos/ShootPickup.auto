@@ -1,0 +1,37 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "pos1"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "pickup1"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "pickup2"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "pickup3"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}
