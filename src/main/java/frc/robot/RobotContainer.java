@@ -15,6 +15,8 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
@@ -46,10 +48,12 @@ public class RobotContainer {
   private Hopper m_hopper   = new Hopper();
   private Intake m_intake   = new Intake();
   private Lights m_Lights = new Lights();
+  Command driveCmd = null;
 
   private CommandXboxController joystick1, xboxController;
   final SendableChooser<Command> autoChooser;
   final SendableChooser<Boolean> driveChooser= new SendableChooser<>();
+  boolean FieldOrientedDrive = false;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -61,8 +65,31 @@ public class RobotContainer {
     driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
     driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
     driveChooser.onChange((selectedOption)->{
-      m_swerveDrive.driveField = selectedOption;
+      FieldOrientedDrive = selectedOption;
       System.out.println("field drive value"+selectedOption);
+      if (FieldOrientedDrive){
+        driveCmd = m_swerveDrive.fieldDriveCommand(
+          () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND), // X
+          () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND), // Y 
+          () -> -joystick1.getRawAxis(4),                                                               // Angle 1
+          () -> -joystick1.getRawAxis(5)                                                              // Angle 2
+          );
+      }else {
+       driveCmd = m_swerveDrive.robotDriveCommand(
+          () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND), // X
+          () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND), // Y 
+          () -> -joystick1.getRawAxis(4),                                                               // Angle 1
+          () -> -joystick1.getRawAxis(5)                                                              // Angle 2
+          );
+        /*
+        driveCmd = m_swerveDrive.fieldDriveCommand( 
+        () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND), // X
+        () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND), // Y 
+        () -> -joystick1.getRawAxis(4),                                                               // Angle 1
+        () -> -joystick1.getRawAxis(5)
+        ); */
+      }
+      m_swerveDrive.setDefaultCommand(driveCmd);
     });
     // Autochooser must be setup after the named commands
     autoChooser = AutoBuilder.buildAutoChooser("Auto1");
@@ -95,21 +122,26 @@ public class RobotContainer {
     } catch (RuntimeException ex) {
       DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
     }
-       
-    Command oneDrive = m_swerveDrive.oneDriveCommand(
-      () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND), // X
-      () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND), // Y 
-      () -> -joystick1.getRawAxis(4),                                                               // Angle 1
-      () -> -joystick1.getRawAxis(5)                                                              // Angle 2
-      );  
     
+    //if (m_swerveDrive.driveField){
+
+        
+   // }else{ 
+   /* 
+      oneDrive = m_swerveDrive.fieldDriveCommand( () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND), // X
+        () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND), // Y 
+        () -> -joystick1.getRawAxis(4),                                                               // Angle 1
+        () -> -joystick1.getRawAxis(5)
+        );*/
+   // }
       /* -> driveCommand can take a single value for rotation or two for the specific target angle -> so take angle and pass cos(theta), sin(theta)
         Might also need to turn on heading correct
         Call just one drive command here, split options in servedrive.
       */
-    m_swerveDrive.setDefaultCommand(oneDrive);
+    //m_swerveDrive.setDefaultCommand(oneDrive);
 
     SmartDashboard.putData("Auto Chooser", autoChooser);
+    SmartDashboard.putData("Drive Chooser", driveChooser);
     SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
     SmartDashboard.putData("drive",new AutoWaypoints(m_swerveDrive,  new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     SmartDashboard.putData("Blue Lights",m_Lights.blue());

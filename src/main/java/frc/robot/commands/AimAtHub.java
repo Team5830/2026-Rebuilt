@@ -63,7 +63,7 @@ public final class AimAtHub extends Command {
                           targetTag, tagPose.getX(), tagPose.getY(),
                           targetAngleDegrees, distanceToTag);
 
-        aimcmd = swerve.oneDriveCommand(
+        aimcmd = swerve.fieldDriveCommand(
             () -> MathUtil.applyDeadband(-joystick.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND),
             () -> MathUtil.applyDeadband(-joystick.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND),
             () -> Math.sin(angleToHub()),

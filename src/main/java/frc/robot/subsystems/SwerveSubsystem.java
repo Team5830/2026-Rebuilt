@@ -23,6 +23,7 @@ import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -99,9 +100,9 @@ public class SwerveSubsystem extends SubsystemBase
     swerveDrive.setAngularVelocityCompensation(true, true, 0.1);
     swerveDrive.setModuleEncoderAutoSynchronize(false, 1);
 
-    if (visionDriveTest && !RobotBase.isSimulation()) {
-      swerveDrive.stopOdometryThread();
-    }
+    //if (visionDriveTest && !RobotBase.isSimulation()) {
+     // swerveDrive.stopOdometryThread();
+    //}
     setupPhotonVision();
     setupPathPlanner();
 
@@ -118,10 +119,10 @@ public class SwerveSubsystem extends SubsystemBase
   @Override
   public void periodic()
   {
-    swerveDrive.updateOdometry();
-    if (visionDriveTest && !RobotBase.isSimulation()) {
-      vision.updatePoseEstimation(swerveDrive);
-    }
+    //swerveDrive.updateOdometry();
+    //if (visionDriveTest && !RobotBase.isSimulation()) {
+    vision.updatePoseEstimation(swerveDrive);
+    //}
   }
 
   @Override
@@ -334,17 +335,15 @@ public class SwerveSubsystem extends SubsystemBase
         true, false));
   }
 
-  public Command driveCommand(DoubleSupplier translationX, DoubleSupplier translationY,
+  public Command robotDriveCommand(DoubleSupplier translationX, DoubleSupplier translationY,
                               DoubleSupplier headingX, DoubleSupplier headingY)
   {
     return run(() -> {
       Translation2d scaledInputs = SwerveMath.scaleTranslation(
-          new Translation2d(translationX.getAsDouble(), translationY.getAsDouble()), 0.8);
-      driveFieldOriented(swerveDrive.swerveController.getTargetSpeeds(
+          new Translation2d(translationX.getAsDouble(), translationY.getAsDouble()), 0.9*maxChassisVelocity);
+      drive(swerveDrive.swerveController.getRawTargetSpeeds(
           scaledInputs.getX(), scaledInputs.getY(),
-          headingX.getAsDouble(), headingY.getAsDouble(),
-          swerveDrive.getOdometryHeading().getRadians(),
-          maxChassisVelocity));
+          headingX.getAsDouble()*maxChassisAngularVelocity) );
     });
   }
 
@@ -382,29 +381,30 @@ public class SwerveSubsystem extends SubsystemBase
    * Primary teleop drive command. In field-oriented mode, the right stick sets the heading angle;
    * the robot rotates to face that direction. Heading correction is off since we handle it here.
    */
-  public Command oneDriveCommand(DoubleSupplier translationX, DoubleSupplier translationY,
+  public Command fieldDriveCommand(DoubleSupplier translationX, DoubleSupplier translationY,
                                  DoubleSupplier headingX, DoubleSupplier headingY)
   {
-    return run(() -> {
-      Translation2d scaledInputs = SwerveMath.scaleTranslation(
-          new Translation2d(translationX.getAsDouble(), translationY.getAsDouble()), 0.8);
-      double hX = headingX.getAsDouble();
-      double hY = headingY.getAsDouble();
+    
+      return run(() -> {
+        Translation2d scaledInputs = SwerveMath.scaleTranslation(
+            new Translation2d(translationX.getAsDouble(), translationY.getAsDouble()), 0.9);
+        double hX = headingX.getAsDouble();
+        double hY = headingY.getAsDouble();
 
-      swerveDrive.setHeadingCorrection(false);
-      double defaultAngle = swerveDrive.swerveController.lastAngleScalar;
-      double angle = swerveDrive.swerveController.withinHypotDeadband(hX, hY)
-                     ? defaultAngle
-                     : Math.atan2(hX, hY);
+        swerveDrive.setHeadingCorrection(false);
+        double defaultAngle = swerveDrive.swerveController.lastAngleScalar;
+        double angle = swerveDrive.swerveController.withinHypotDeadband(hX, hY)
+                      ? defaultAngle
+                      : Math.atan2(hX, hY);
 
-      driveFieldOriented(swerveDrive.swerveController.getTargetSpeeds(
-          scaledInputs.getX(), scaledInputs.getY(),
-          angle,
-          swerveDrive.getOdometryHeading().getRadians(),
-          maxChassisVelocity));
+        driveFieldOriented(swerveDrive.swerveController.getTargetSpeeds(
+            scaledInputs.getX(), scaledInputs.getY(),
+            angle,
+            swerveDrive.getOdometryHeading().getRadians(),
+            maxChassisVelocity));
 
-      swerveDrive.swerveController.lastAngleScalar = angle;
-    });
+        swerveDrive.swerveController.lastAngleScalar = angle;
+      });  
   }
 
   public SwerveDriveKinematics getKinematics()
