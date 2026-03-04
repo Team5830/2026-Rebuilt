@@ -5,6 +5,7 @@
 package frc.robot;
 
 import frc.robot.subsystems.*;
+import frc.robot.Constants.intake;
 import frc.robot.commands.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -152,6 +153,7 @@ public class RobotContainer {
     SmartDashboard.putData("Up", new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
     SmartDashboard.putData("Down",new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
     SmartDashboard.putData("Right", new AutoWaypoints(m_swerveDrive, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
+    SmartDashboard.putData("toggleIntake", m_intake.toggleIntake());
     //Warm up Path following commands
     FollowPathCommand.warmupCommand();
     // Configure the trigger bindings
@@ -180,7 +182,7 @@ public class RobotContainer {
     /*Co-driver controls  Port 2 */
     xboxController.povUp().onTrue( m_climber.Up());
     xboxController.povDown().onTrue(m_climber.Down());
-    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_Lights.red(),m_intake.toggleIntake()));
+    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Lights.red()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
    
     }

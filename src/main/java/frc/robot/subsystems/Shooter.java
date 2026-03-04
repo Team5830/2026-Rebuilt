@@ -58,6 +58,9 @@ public class Shooter extends SubsystemBase {
             .pid(0.003, 0.0, 0.18);
         configureMotorFlex(shootermotor, shooterConfig, "shooter");
 
+        SparkMaxConfig feedConfig = new SparkMaxConfig();
+        feedConfig.idleMode(IdleMode.kCoast);
+        configureMotor(feed, feedConfig, "feed");
         // Follower motor config
         SparkFlexConfig shooter2Config = new SparkFlexConfig();
         shooter2Config.idleMode(IdleMode.kCoast);
@@ -107,7 +110,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command FeedOn() {
-        return runOnce(() -> feedmotor.setVoltage(0.5));
+        return runOnce(() -> feedmotor.setVoltage(3));
     }
 
     public Command FeedOff() {

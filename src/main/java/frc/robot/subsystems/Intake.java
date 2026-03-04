@@ -13,15 +13,16 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkFlexConfig;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 
 public class Intake extends SubsystemBase {
-    private static final double INTAKE_VOLTAGE = 0.3;
-    private static final double FEED_VOLTAGE   = 0.3;
+    private static final double INTAKE_VOLTAGE = 2.0;
+    private static final double FEED_VOLTAGE   = 6;
 
     private final SparkFlex intakeMotor1;
     private final SparkFlex intakeMotor2;
     private boolean intakeIsOn = false;
-    private boolean feedIsOn   = false;
+    private boolean feedIsOn   = false; 
 
     public Intake() {
         SparkFlex m1 = null, m2 = null;
@@ -40,14 +41,22 @@ public class Intake extends SubsystemBase {
         if (intakeMotor2 != null) intakeMotor2.setVoltage(v2);
     }
 
-    public Command IntakeOn()  { return runOnce(() -> setVoltages( INTAKE_VOLTAGE, -INTAKE_VOLTAGE)); }
+    public Command IntakeOn()  { return runOnce(() -> setVoltages( -INTAKE_VOLTAGE, INTAKE_VOLTAGE)); }
     public Command IntakeOff() { return runOnce(() -> setVoltages(0, 0)); }
     public Command FeedOn()    { return runOnce(() -> setVoltages( FEED_VOLTAGE,   FEED_VOLTAGE)); }
+    public Command IntakeFeed()    { return runOnce(() -> setVoltages( -FEED_VOLTAGE,   -FEED_VOLTAGE)); }
     public Command FeedOff()   { return runOnce(() -> setVoltages(0, 0)); }
 
     public Command toggleIntake() {
+        Command returncmd;
+        if (intakeIsOn){
+            returncmd = new SequentialCommandGroup(IntakeOff(), FeedOff());
+        }
+        else{
+            returncmd = new SequentialCommandGroup(IntakeOn(), IntakeFeed());
+        }
         intakeIsOn = !intakeIsOn;
-        return intakeIsOn ? IntakeOn() : IntakeOff();
+        return returncmd;
     }
 
     public Command toggleFeed() {
