@@ -20,15 +20,20 @@ public class Intake extends SubsystemBase {
     private static final double FEED_VOLTAGE   = 6;
 
     private final SparkFlex intakeMotor1;
-    private final SparkFlex intakeMotor2;
+    private final SparkMax intakeMotor2;
     private boolean intakeIsOn = false;
     private boolean feedIsOn   = false; 
 
     public Intake() {
-        SparkFlex m1 = null, m2 = null;
+        SparkFlex m1 = null;
         try {
             m1 = new SparkFlex(Constants.intake.motor1ID, MotorType.kBrushless);
-            m2 = new SparkFlex(Constants.intake.motor2ID, MotorType.kBrushless);
+        } catch (RuntimeException ex) {
+            DriverStation.reportError("Error instantiating Intake Motors: " + ex.getMessage(), true);
+        }
+        SparkMax m2 = null;
+        try {
+            m2 = new SparkMax(Constants.intake.motor2ID, MotorType.kBrushless);
         } catch (RuntimeException ex) {
             DriverStation.reportError("Error instantiating Intake Motors: " + ex.getMessage(), true);
         }
