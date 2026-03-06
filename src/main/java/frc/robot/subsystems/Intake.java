@@ -17,7 +17,7 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 
 public class Intake extends SubsystemBase {
     private static final double INTAKE_VOLTAGE = 2.0;
-    private static final double FEED_VOLTAGE   = 6;
+    private static final double FEED_VOLTAGE   = 1;
 
     private final SparkFlex intakeMotor1;
     private final SparkMax intakeMotor2;

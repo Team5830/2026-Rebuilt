@@ -15,6 +15,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -69,6 +70,7 @@ public class Shooter extends SubsystemBase {
 
         // Hood motor config
         SparkMaxConfig hoodConfig = new SparkMaxConfig();
+        hoodConfig.encoder.positionConversionFactor(Constants.shooter.multiplier);
         hoodConfig.idleMode(IdleMode.kBrake);
         hoodConfig.softLimit
             .forwardSoftLimit(Constants.shooter.ForwardLimit)
@@ -110,7 +112,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command FeedOn() {
-        return runOnce(() -> feedmotor.setVoltage(3));
+        return runOnce(() -> feedmotor.setVoltage(-6));
     }
 
     public Command FeedOff() {
@@ -124,7 +126,7 @@ public class Shooter extends SubsystemBase {
 
     public Command ShootOn() {
         return runOnce(() ->
-            shootermotor.getClosedLoopController().setSetpoint(shootspeed, ControlType.kVelocity));
+            shootermotor.getClosedLoopController().setSetpoint(-shootspeed, ControlType.kVelocity));
     }
 
     public Command ShootOff() {
@@ -151,4 +153,10 @@ public class Shooter extends SubsystemBase {
         shooterIsOn = !shooterIsOn;
         return shooterIsOn ? ShooterOn() : ShooterOff();
     }
+
+    @Override
+  public void periodic()
+  {
+    SmartDashboard.putNumber("Hood",hoodEncoder.getPosition());
+  }
 }
