@@ -86,8 +86,8 @@ public final class Constants {
     public static final int shootermotor = 10;
     public static final int shootermotor2 = 11;
     public static final int hoodmotor = 13;
-    public static final double ForwardLimit = 8.0;
-    public static final double ReverseLimit = 0.0;
+    public static final double ForwardLimit = 8.0; //0.9 -> 59
+    public static final double ReverseLimit = 0.0; //
     public static final double hoodp = 0.1;
     public static final double hoodi = 0.0;
     public static final double hoodd = 0.0;
@@ -103,7 +103,7 @@ public final class Constants {
   }
   public static final class hopper {
     public static final int hoppermotor = 15;
-    public static final double forwardlimit = 1.0; 
+    public static final double forwardlimit = 2.1; 
     public static final double reverselimit = 0; 
   }
   public static final class intake {
