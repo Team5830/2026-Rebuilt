@@ -92,14 +92,14 @@ public class Shooter extends SubsystemBase {
     /** Configure a motor and report any error. */
     private void configureMotor(SparkMax motor, SparkMaxConfig config, String name) {
         if (motor == null) return;
-        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
         if (err != REVLibError.kOk) {
             DriverStation.reportError("Failed to configure " + name + " motor: " + err, true);
         }
     }
     private void configureMotorFlex(SparkFlex motor, SparkFlexConfig config, String name) {
         if (motor == null) return;
-        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
         if (err != REVLibError.kOk) {
             DriverStation.reportError("Failed to configure " + name + " motor: " + err, true);
         }     
@@ -118,6 +118,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command setShootSpeed(double setpoint) {
+        
         return runOnce(() -> shootspeed = setpoint);
     }
 

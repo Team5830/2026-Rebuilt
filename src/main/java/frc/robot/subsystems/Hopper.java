@@ -28,7 +28,7 @@ public class Hopper extends SubsystemBase {
                 .reverseSoftLimit(Constants.hopper.reverselimit)
                 .reverseSoftLimitEnabled(true);
                 hoppermotorConfig.smartCurrentLimit(40);
-            var configret = hoppermotor.configure(hoppermotorConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+            var configret = hoppermotor.configure(hoppermotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
             if (REVLibError.kOk != configret){
                 DriverStation.reportError("Failed to configure hopper motor " + configret, true);
             }
