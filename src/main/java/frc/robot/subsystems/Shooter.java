@@ -15,6 +15,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -28,7 +29,7 @@ public class Shooter extends SubsystemBase {
     private final SparkFlex     shootermotor2;
     private final SparkMax     hoodmotor;
     private final SparkClosedLoopController hoodController;
-    private final RelativeEncoder           hoodEncoder;
+    private final RelativeEncoder           hoodEncoder, shooterEncoder;
 
     private double  shootspeed  = 4200;
     private boolean shooterIsOn = false;
@@ -57,6 +58,7 @@ public class Shooter extends SubsystemBase {
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .pid(0.003, 0.0, 0.18);
         configureMotorFlex(shootermotor, shooterConfig, "shooter");
+        shooterEncoder = shootermotor.getEncoder();
 
         SparkMaxConfig feedConfig = new SparkMaxConfig();
         feedConfig.idleMode(IdleMode.kCoast);
@@ -69,6 +71,7 @@ public class Shooter extends SubsystemBase {
 
         // Hood motor config
         SparkMaxConfig hoodConfig = new SparkMaxConfig();
+        hoodConfig.encoder.positionConversionFactor(Constants.shooter.multiplier);
         hoodConfig.idleMode(IdleMode.kBrake);
         hoodConfig.softLimit
             .forwardSoftLimit(Constants.shooter.ForwardLimit)
@@ -92,14 +95,14 @@ public class Shooter extends SubsystemBase {
     /** Configure a motor and report any error. */
     private void configureMotor(SparkMax motor, SparkMaxConfig config, String name) {
         if (motor == null) return;
-        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
         if (err != REVLibError.kOk) {
             DriverStation.reportError("Failed to configure " + name + " motor: " + err, true);
         }
     }
     private void configureMotorFlex(SparkFlex motor, SparkFlexConfig config, String name) {
         if (motor == null) return;
-        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
         if (err != REVLibError.kOk) {
             DriverStation.reportError("Failed to configure " + name + " motor: " + err, true);
         }     
@@ -110,7 +113,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command FeedOn() {
-        return runOnce(() -> feedmotor.setVoltage(3));
+        return runOnce(() -> feedmotor.setVoltage(-6));
     }
 
     public Command FeedOff() {
@@ -118,12 +121,16 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command setShootSpeed(double setpoint) {
+        
+        if (shooterIsOn) {
+            return runOnce(() -> {shootspeed = setpoint; ShootOn();});    
+        }
         return runOnce(() -> shootspeed = setpoint);
     }
 
     public Command ShootOn() {
         return runOnce(() ->
-            shootermotor.getClosedLoopController().setSetpoint(shootspeed, ControlType.kVelocity));
+            shootermotor.getClosedLoopController().setSetpoint(-shootspeed, ControlType.kVelocity));
     }
 
     public Command ShootOff() {
@@ -150,4 +157,11 @@ public class Shooter extends SubsystemBase {
         shooterIsOn = !shooterIsOn;
         return shooterIsOn ? ShooterOn() : ShooterOff();
     }
+
+    @Override
+  public void periodic()
+  {
+    SmartDashboard.putNumber("Hood",hoodEncoder.getPosition());
+    SmartDashboard.putNumber("Shooter Velocity",shooterEncoder.getVelocity());
+  }
 }

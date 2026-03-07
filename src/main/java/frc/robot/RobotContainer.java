@@ -45,7 +45,7 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private SwerveSubsystem m_swerveDrive;
   private Shooter m_Shooter =  new Shooter();
-  private Climber m_climber = new Climber(); 
+  //private Climber m_climber = new Climber(); 
   private Hopper m_hopper   = new Hopper();
   private Intake m_intake   = new Intake();
   private Lights m_Lights = new Lights();
@@ -154,6 +154,10 @@ public class RobotContainer {
     SmartDashboard.putData("Down",new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
     SmartDashboard.putData("Right", new AutoWaypoints(m_swerveDrive, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
     SmartDashboard.putData("toggleIntake", m_intake.toggleIntake());
+    SmartDashboard.putNumber("ShooterSpeed", 4200);
+    SmartDashboard.putNumber("HoodAngle", 10);
+    
+    SmartDashboard.putData("Test Shoot", new testShoot(m_Shooter, m_intake, m_swerveDrive));
     //Warm up Path following commands
     FollowPathCommand.warmupCommand();
     // Configure the trigger bindings
@@ -180,8 +184,8 @@ public class RobotContainer {
     joystick1.povRight().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
     
     /*Co-driver controls  Port 2 */
-    xboxController.povUp().onTrue( m_climber.Up());
-    xboxController.povDown().onTrue(m_climber.Down());
+    //xboxController.povUp().onTrue( m_climber.Up());
+    //xboxController.povDown().onTrue(m_climber.Down());
     xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Lights.red()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
    

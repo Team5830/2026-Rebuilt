@@ -3,6 +3,7 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
+import frc.robot.Constants.shooter;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.SwerveSubsystem;
@@ -11,13 +12,14 @@ import frc.robot.subsystems.SwerveSubsystem;
  * One-shot command that configures shooter speed and hood angle based on the
  * current distance to hub, then toggles the shooter and feed.
  */
-public final class Shoot extends Command {
+public final class testShoot extends Command {
 
     private final Shooter        m_shooter;
     private final Intake         m_intake;
     private final SwerveSubsystem m_swerve;
+    private double shooterspeed, hoodangle;
 
-    public Shoot(Shooter shooter, Intake intake, SwerveSubsystem swerve) {
+    public testShoot(Shooter shooter, Intake intake, SwerveSubsystem swerve) {
         addRequirements(shooter);
         this.m_shooter = shooter;
         this.m_intake  = intake;
@@ -29,11 +31,13 @@ public final class Shoot extends Command {
         double distanceToHub = m_swerve.DistancetoHub();
         System.out.println("DistanceToHub: " + distanceToHub);
         SmartDashboard.putNumber("DistanceToHub", distanceToHub);
-        System.out.println("Set Shoot Speed: " + (distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC));
-        System.out.println("moveHood: " + (distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC));
+        shooterspeed = SmartDashboard.getNumber("ShooterSpeed", 4200);
+        hoodangle = SmartDashboard.getNumber("HoodAngle", 0);
+        System.out.println("ShootSpeed: " + shooterspeed);
+        System.out.println("HoodAngle: " + hoodangle);
         // Configure speed and angle based on range, then toggle shooter + feed
-        m_shooter.setShootSpeed(distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC).schedule();   
-        m_shooter.moveHood(distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC).schedule();
+        m_shooter.setShootSpeed(shooterspeed).schedule();
+        //m_shooter.moveHood(hoodangle).schedule();
         m_shooter.toggleShooter().schedule();
         m_intake.toggleFeed().schedule();
     }

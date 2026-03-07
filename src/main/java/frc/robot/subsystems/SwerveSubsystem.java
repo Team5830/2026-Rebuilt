@@ -100,9 +100,9 @@ public class SwerveSubsystem extends SubsystemBase
     swerveDrive.setAngularVelocityCompensation(true, true, 0.1);
     swerveDrive.setModuleEncoderAutoSynchronize(false, 1);
 
-    //if (visionDriveTest && !RobotBase.isSimulation()) {
-     // swerveDrive.stopOdometryThread();
-    //}
+    if (visionDriveTest && !RobotBase.isSimulation()) {
+      swerveDrive.stopOdometryThread();
+    }
     setupPhotonVision();
     setupPathPlanner();
 
@@ -119,10 +119,10 @@ public class SwerveSubsystem extends SubsystemBase
   @Override
   public void periodic()
   {
-    //swerveDrive.updateOdometry();
-    //if (visionDriveTest && !RobotBase.isSimulation()) {
-    vision.updatePoseEstimation(swerveDrive);
-    //}
+    swerveDrive.updateOdometry();
+    if (visionDriveTest && !RobotBase.isSimulation()) {
+      vision.updatePoseEstimation(swerveDrive);
+    }
   }
 
   @Override
