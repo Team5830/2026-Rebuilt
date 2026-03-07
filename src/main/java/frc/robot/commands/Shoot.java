@@ -29,9 +29,10 @@ public final class Shoot extends Command {
         double distanceToHub = m_swerve.DistancetoHub();
         System.out.println("DistanceToHub: " + distanceToHub);
         SmartDashboard.putNumber("DistanceToHub", distanceToHub);
-
+        System.out.println("Set Shoot Speed: " + (distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC));
+        System.out.println("moveHood: " + (distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC));
         // Configure speed and angle based on range, then toggle shooter + feed
-        m_shooter.setShootSpeed(distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC).schedule();
+        m_shooter.setShootSpeed(distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC).schedule();   
         m_shooter.moveHood(distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC).schedule();
         m_shooter.toggleShooter().schedule();
         m_intake.toggleFeed().schedule();

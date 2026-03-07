@@ -37,9 +37,9 @@ public final class testShoot extends Command {
         System.out.println("HoodAngle: " + hoodangle);
         // Configure speed and angle based on range, then toggle shooter + feed
         m_shooter.setShootSpeed(shooterspeed).schedule();
-        m_shooter.moveHood(hoodangle).schedule();
-        //m_shooter.toggleShooter().schedule();
-        //m_intake.toggleFeed().schedule();
+        //m_shooter.moveHood(hoodangle).schedule();
+        m_shooter.toggleShooter().schedule();
+        m_intake.toggleFeed().schedule();
     }
 
     @Override

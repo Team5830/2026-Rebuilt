@@ -12,6 +12,7 @@ import com.revrobotics.REVLibError;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.RelativeEncoder;
 
 
@@ -27,6 +28,7 @@ public class Hopper extends SubsystemBase {
             double ConversionFactor = 1.2;
             encoder = hoppermotor.getEncoder();
             hoppermotorConfig.encoder.positionConversionFactor(ConversionFactor);
+            hoppermotorConfig.idleMode(IdleMode.kBrake);
             hoppermotorConfig.softLimit
                 .forwardSoftLimit(Constants.hopper.forwardlimit)
                 .forwardSoftLimitEnabled(true)
@@ -61,10 +63,10 @@ public class Hopper extends SubsystemBase {
     }
 
     public void extendHopper() {
-        hoppermotor.setVoltage(3);
+        hoppermotor.setVoltage(-6);
     }
     public void retractHopper() {
-        hoppermotor.setVoltage(-3);
+        hoppermotor.setVoltage(8);
     }
 
   @Override
