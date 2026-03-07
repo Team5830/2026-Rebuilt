@@ -33,6 +33,7 @@ public class Shooter extends SubsystemBase {
 
     private double  shootspeed  = 4200;
     private boolean shooterIsOn = false;
+    private boolean feedIsOn = false;
 
     @SuppressWarnings("removal")
     public Shooter() {
@@ -116,6 +117,10 @@ public class Shooter extends SubsystemBase {
         return runOnce(() -> feedmotor.setVoltage(-6));
     }
 
+    public Command IntakeFeed() {
+        return runOnce(() -> feedmotor.setVoltage(3));
+    }
+
     public Command FeedOff() {
         return runOnce(() -> feedmotor.setVoltage(0.0));
     }
@@ -156,6 +161,11 @@ public class Shooter extends SubsystemBase {
     public Command toggleShooter() {
         shooterIsOn = !shooterIsOn;
         return shooterIsOn ? ShooterOn() : ShooterOff();
+    }
+
+     public Command toggleIntakeFeed() {
+        feedIsOn = !feedIsOn;
+        return feedIsOn ? IntakeFeed() : FeedOff();
     }
 
     @Override

@@ -154,6 +154,10 @@ public class RobotContainer {
     SmartDashboard.putData("Down",new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
     SmartDashboard.putData("Right", new AutoWaypoints(m_swerveDrive, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
     SmartDashboard.putData("toggleIntake", m_intake.toggleIntake());
+    SmartDashboard.putData("INTAKE ON", m_intake.IntakeOn());
+    SmartDashboard.putData("INTAKE OFF", m_intake.IntakeOff());
+    SmartDashboard.putData("Feed Off", m_intake.FeedOff());
+     SmartDashboard.putData("Feed on", m_intake.FeedOn());
     SmartDashboard.putNumber("ShooterSpeed", 4200);
     SmartDashboard.putNumber("HoodAngle", 10);
     
@@ -186,7 +190,7 @@ public class RobotContainer {
     /*Co-driver controls  Port 2 */
     //xboxController.povUp().onTrue( m_climber.Up());
     //xboxController.povDown().onTrue(m_climber.Down());
-    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Lights.red()));
+    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(), m_Lights.red()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
    
     }
