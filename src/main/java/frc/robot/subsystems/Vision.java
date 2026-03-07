@@ -277,33 +277,27 @@ public class Vision
    */
   enum Cameras
   {
-    FRONT_CAM("FrontCam",
-             new Rotation3d(0, Math.toRadians(-30), Math.toRadians(0)),
-             new Translation3d(Units.inchesToMeters(13),
+    FRONT_CAM("Front",
+             new Rotation3d(0, Math.toRadians(0), Math.toRadians(0)),
+             new Translation3d(Units.inchesToMeters(4.75),
                                Units.inchesToMeters(0),
-                               Units.inchesToMeters(5)),
+                               Units.inchesToMeters(21)),
              VecBuilder.fill(4, 4, 8), VecBuilder.fill(0.5, 0.5, 1)),
-    BACK_CAM("BackCam",
-             new Rotation3d(0, Math.toRadians(0.0), Math.toRadians(80)),
-             new Translation3d(Units.inchesToMeters(-13),
-                               Units.inchesToMeters(0),
-                               Units.inchesToMeters(26)),
+    RIGHT_CAM("Right",
+             new Rotation3d(0, Math.toRadians(0), Math.toRadians(0)),
+             new Translation3d(Units.inchesToMeters(4.75),
+                               Units.inchesToMeters(-7.75),
+                               Units.inchesToMeters(21)),
+             VecBuilder.fill(4, 4, 8), VecBuilder.fill(0.5, 0.5, 1)),
+    LEFT_CAM("Left",
+             new Rotation3d(0, Math.toRadians(0), Math.toRadians(0)),
+             new Translation3d(Units.inchesToMeters(4.75),
+                               Units.inchesToMeters(7.75),
+                               Units.inchesToMeters(21)),
              VecBuilder.fill(4, 4, 8), VecBuilder.fill(0.5, 0.5, 1));
+
                
-    /**
-     * Center Camera
-     */
-    /*
-    CENTER_CAM("center",
-               new Rotation3d(0, Units.degreesToRadians(18), 0),
-               new Translation3d(Units.inchesToMeters(-4.628),
-                                 Units.inchesToMeters(-10.687),
-                                 Units.inchesToMeters(16.129)),
-               VecBuilder.fill(4, 4, 8), VecBuilder.fill(0.5, 0.5, 1));
-     */
-    /**
-     * Latency alert to use when high latency is detected.
-     */
+    
     public final  Alert                        latencyAlert;
     /**
      * Camera instance for comms.
