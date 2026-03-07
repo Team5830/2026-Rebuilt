@@ -29,7 +29,7 @@ public class Shooter extends SubsystemBase {
     private final SparkFlex     shootermotor2;
     private final SparkMax     hoodmotor;
     private final SparkClosedLoopController hoodController;
-    private final RelativeEncoder           hoodEncoder;
+    private final RelativeEncoder           hoodEncoder, shooterEncoder;
 
     private double  shootspeed  = 4200;
     private boolean shooterIsOn = false;
@@ -58,6 +58,7 @@ public class Shooter extends SubsystemBase {
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .pid(0.003, 0.0, 0.18);
         configureMotorFlex(shootermotor, shooterConfig, "shooter");
+        shooterEncoder = shootermotor.getEncoder();
 
         SparkMaxConfig feedConfig = new SparkMaxConfig();
         feedConfig.idleMode(IdleMode.kCoast);
@@ -121,6 +122,9 @@ public class Shooter extends SubsystemBase {
 
     public Command setShootSpeed(double setpoint) {
         
+        if (shooterIsOn) {
+            return runOnce(() -> {shootspeed = setpoint; ShootOn();});    
+        }
         return runOnce(() -> shootspeed = setpoint);
     }
 
@@ -158,5 +162,6 @@ public class Shooter extends SubsystemBase {
   public void periodic()
   {
     SmartDashboard.putNumber("Hood",hoodEncoder.getPosition());
+    SmartDashboard.putNumber("Shooter Velocity",shooterEncoder.getVelocity());
   }
 }
