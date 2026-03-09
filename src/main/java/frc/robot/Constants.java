@@ -87,11 +87,11 @@ public final class Constants {
     public static final int shootermotor2 = 11;
     public static final int hoodmotor = 13;
     public static final double ForwardLimit = 56.0; //0.9 -> 56
-    public static final double ReverseLimit = 0.0; //
+    public static final double ReverseLimit = -5.0; //
     public static final double multiplier = 62.2;
-    public static final double hoodp = 4.0;
+    public static final double hoodp = 0.05;//.2
     public static final double hoodi = 0.0;
-    public static final double hoodd = 0.5;
+    public static final double hoodd = 0.01;
     public static final double SpeedB = 360;
     public static final double SpeedC = 2960;
     public static final double AngleB = 13;
