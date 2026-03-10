@@ -35,6 +35,7 @@ public final class Shoot extends Command {
         m_shooter.setShootSpeed(distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC).schedule();   
         m_shooter.moveHood(distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC).schedule();
         m_shooter.toggleShooter().schedule();
+        m_shooter.toggleFeed();
         m_intake.toggleFeed().schedule();
     }
 

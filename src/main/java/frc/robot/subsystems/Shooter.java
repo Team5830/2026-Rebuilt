@@ -215,13 +215,34 @@ public class Shooter extends SubsystemBase {
     public Command toggleShooter() {
         return runOnce(() -> {          // fix: was branching outside lambda
             if (shooterIsOn) {
-                if (feedmotor    != null) feedmotor.setVoltage(0.0);
-                if (shootermotor != null) shootermotor.setVoltage(0.0);
-                feedIsOn    = false;
+                ShootOff();
                 shooterIsOn = false;
             } else {
                 applyShooterSetpoint();
                 shooterIsOn = true;
+            }
+        });
+    }
+/*
+     public Command toggleFeed() {
+        return runOnce(() -> {          // fix: was branching outside lambda
+            if (feedIsOn) {
+                FeedOff();
+            } else {
+                FeedOn();
+            }
+        });
+    }
+ */
+     public Command toggleFeed() {
+        return runOnce(() -> {
+            if (feedIsOn) {
+                if (feedmotor != null) feedmotor.setVoltage(0.0);
+                feedIsOn = false;
+            } else {
+                if (feedmotor != null) feedmotor.setVoltage(-6);
+                    feedIsOn       = true;
+                    intakeFeedIsOn = false;
             }
         });
     }
@@ -230,7 +251,7 @@ public class Shooter extends SubsystemBase {
     public Command toggleIntakeFeed() {
         return runOnce(() -> {          // fix: was branching outside lambda
             if (intakeFeedIsOn) {
-                if (feedmotor != null) feedmotor.setVoltage(0.0);
+                if (feedmotor != null) feedmotor.setVoltage(3);
                 intakeFeedIsOn = false;
             } else {
                 if (feedmotor != null) feedmotor.setVoltage(3);
@@ -239,6 +260,8 @@ public class Shooter extends SubsystemBase {
             }
         });
     }
+
+    
 
     // -------------------------------------------------------------------------
     // Telemetry
