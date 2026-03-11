@@ -155,7 +155,7 @@ public class RobotContainer {
     SmartDashboard.putData("Down",new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
     SmartDashboard.putData("Right", new AutoWaypoints(m_swerveDrive, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
     SmartDashboard.putData("INTAKEtoggleIntake", m_intake.toggleIntake()); //new ParallelCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(), m_Lights.red()));
-    SmartDashboard.putData("INTAKEtoggleFeed", m_intake.toggleFeed()); 
+    SmartDashboard.putData("INTAKEtoggleFeed", m_intake.toggleFeedMode()); 
     SmartDashboard.putData("INTAKEtoggleIntake", m_intake.toggleIntake()); 
     SmartDashboard.putData("ShootertoggleFeed", m_Shooter.toggleFeed());
     SmartDashboard.putData("ShooterFeedOn", m_Shooter.FeedOn());
@@ -165,7 +165,7 @@ public class RobotContainer {
     SmartDashboard.putData("INTAKE ON", m_intake.IntakeOn());
     SmartDashboard.putData("INTAKE OFF", m_intake.IntakeOff());
     SmartDashboard.putData("Feed Off", m_intake.FeedOff());
-     SmartDashboard.putData("Feed on", m_intake.FeedOn());
+    SmartDashboard.putData("Feed on", m_intake.FeedOn());
     SmartDashboard.putNumber("ShooterSpeed", 4200);
     SmartDashboard.putNumber("HoodAngle", 10);
     
@@ -189,7 +189,6 @@ public class RobotContainer {
     /* Driver Controls Port 1 */
     joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1, m_Lights));
     joystick1.back().onTrue( m_swerveDrive.ToggleBrake());
-    joystick1.rightTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerveDrive));
     joystick1.povLeft().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     joystick1.povUp().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
     joystick1.povDown().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
@@ -200,6 +199,8 @@ public class RobotContainer {
     //xboxController.povDown().onTrue(m_climber.Down());
     xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(), m_Lights.red()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
+    xboxController.leftTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerveDrive));
+    xboxController.x().onTrue(m_Lights.pink());
    
     }
 

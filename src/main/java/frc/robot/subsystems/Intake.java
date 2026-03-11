@@ -11,7 +11,7 @@ import frc.robot.Constants;
 
 public class Intake extends SubsystemBase {
     private static final double INTAKE_VOLTAGE = 3.0;
-    private static final double FEED_VOLTAGE   = 6.0;
+    private static final double FEED_VOLTAGE   = 2.0;
 
     private final SparkFlex intakeMotor1;
     private final SparkMax  intakeMotor2;
@@ -85,7 +85,7 @@ public class Intake extends SubsystemBase {
         });
     }
 
-    public Command toggleFeed() {
+    public Command toggleFeedMode() {
         return runOnce(() -> {
             if (feedIsOn) {
                 setVoltages(0, 0);

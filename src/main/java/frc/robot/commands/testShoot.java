@@ -39,7 +39,7 @@ public final class testShoot extends Command {
         m_shooter.setShootSpeed(shooterspeed).schedule();
         m_shooter.moveHood(hoodangle).schedule();
         m_shooter.toggleShooter().schedule();
-        m_intake.toggleFeed().schedule();
+        m_intake.toggleFeedMode().schedule();
     }
 
     @Override

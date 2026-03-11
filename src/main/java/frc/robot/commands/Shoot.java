@@ -6,6 +6,7 @@ import frc.robot.Constants;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.SwerveSubsystem;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 
 /**
  * One-shot command that configures shooter speed and hood angle based on the
@@ -35,8 +36,9 @@ public final class Shoot extends Command {
         m_shooter.setShootSpeed(distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC).schedule();   
         m_shooter.moveHood(distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC).schedule();
         m_shooter.toggleShooter().schedule();
-        m_shooter.toggleFeed();
-        m_intake.toggleFeed().schedule();
+        new WaitCommand(1.0);
+        m_shooter.toggleFeed().schedule();
+        m_intake.toggleFeedMode().schedule();
     }
 
     @Override

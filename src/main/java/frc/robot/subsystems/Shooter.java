@@ -94,7 +94,7 @@ public class Shooter extends SubsystemBase {
         if (hoodmotor != null) {
             hoodController = hoodmotor.getClosedLoopController();
             hoodEncoder    = hoodmotor.getEncoder();
-            hoodEncoder.setPosition(0);
+            //hoodEncoder.setPosition(0);
         } else {
             hoodController = null;
             hoodEncoder    = null;
@@ -158,7 +158,7 @@ public class Shooter extends SubsystemBase {
     /** Run feed motor in reverse to assist intaking. Clears shooter-feed state. */
     public Command IntakeFeed() {
         return runOnce(() -> {
-            if (feedmotor != null) feedmotor.setVoltage(3);
+            if (feedmotor != null) feedmotor.setVoltage(1.5);
             intakeFeedIsOn = true;
             feedIsOn       = false;
         });
@@ -192,6 +192,7 @@ public class Shooter extends SubsystemBase {
     public Command ShootOff() {
         return runOnce(() -> {
             if (shootermotor != null) shootermotor.setVoltage(0.0);
+
             shooterIsOn = false;
         });
     }
@@ -215,7 +216,8 @@ public class Shooter extends SubsystemBase {
     public Command toggleShooter() {
         return runOnce(() -> {          // fix: was branching outside lambda
             if (shooterIsOn) {
-                ShootOff();
+                if (shootermotor != null) shootermotor.setVoltage(0.0);
+                moveHood(0).schedule();
                 shooterIsOn = false;
             } else {
                 applyShooterSetpoint();
@@ -240,7 +242,7 @@ public class Shooter extends SubsystemBase {
                 if (feedmotor != null) feedmotor.setVoltage(0.0);
                 feedIsOn = false;
             } else {
-                if (feedmotor != null) feedmotor.setVoltage(-6);
+                if (feedmotor != null) feedmotor.setVoltage(-7);
                     feedIsOn       = true;
                     intakeFeedIsOn = false;
             }
@@ -251,10 +253,10 @@ public class Shooter extends SubsystemBase {
     public Command toggleIntakeFeed() {
         return runOnce(() -> {          // fix: was branching outside lambda
             if (intakeFeedIsOn) {
-                if (feedmotor != null) feedmotor.setVoltage(3);
+                if (feedmotor != null) feedmotor.setVoltage(0);
                 intakeFeedIsOn = false;
             } else {
-                if (feedmotor != null) feedmotor.setVoltage(3);
+                if (feedmotor != null) feedmotor.setVoltage(1.5);
                 intakeFeedIsOn = true;
                 feedIsOn       = false;
             }
