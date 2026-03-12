@@ -2,6 +2,7 @@ package frc.robot.commands;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants;
 import frc.robot.Constants.shooter;
 import frc.robot.subsystems.Intake;
@@ -39,6 +40,8 @@ public final class testShoot extends Command {
         m_shooter.setShootSpeed(shooterspeed).schedule();
         m_shooter.moveHood(hoodangle).schedule();
         m_shooter.toggleShooter().schedule();
+        new WaitCommand(1.0);
+        m_shooter.toggleFeed().schedule();
         m_intake.toggleFeedMode().schedule();
     }
 

@@ -132,6 +132,20 @@ public class Shooter extends SubsystemBase {
     // Commands
     // -------------------------------------------------------------------------
 
+    public Command adjustHoodup(){
+        return runOnce(() -> {
+            if (hoodController != null)
+                hoodController.setSetpoint(hoodController.getSetpoint()+1, ControlType.kPosition);
+        });
+    }
+
+    public Command adjustHooddown(){
+        return runOnce(() -> {
+            if (hoodController != null)
+                hoodController.setSetpoint(hoodController.getSetpoint()-1, ControlType.kPosition);
+        });
+    }
+
     public Command moveHood(double position) {
         return runOnce(() -> {
             if (hoodController != null)
