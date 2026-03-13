@@ -105,7 +105,7 @@ public final class Constants {
   public static final class hopper {
     public static final int hoppermotor = 15;
     public static final double forwardlimit = 0.0; 
-    public static final double reverselimit = -2.09; 
+    public static final double reverselimit = -2.15; 
   }
   public static final class intake {
     public static final int motor1ID = 9;

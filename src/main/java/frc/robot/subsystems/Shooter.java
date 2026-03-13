@@ -56,6 +56,7 @@ public class Shooter extends SubsystemBase {
         // --- Shooter wheels ---
         SparkFlexConfig shooterConfig = new SparkFlexConfig();
         shooterConfig.idleMode(IdleMode.kCoast);
+        shooterConfig.smartCurrentLimit(30);
         shooterConfig.closedLoop
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .pid(0.003, 0.0, 0.18);
@@ -70,6 +71,7 @@ public class Shooter extends SubsystemBase {
         // --- Shooter follower ---
         SparkFlexConfig shooter2Config = new SparkFlexConfig();
         shooter2Config.idleMode(IdleMode.kCoast);
+        shooter2Config.smartCurrentLimit(30);
         if (shootermotor != null) shooter2Config.follow(shootermotor, true);
         configureMotorFlex(shootermotor2, shooter2Config, "shooter2");
 
@@ -88,7 +90,7 @@ public class Shooter extends SubsystemBase {
             .i(Constants.shooter.hoodi)
             .d(Constants.shooter.hoodd)
             .outputRange(-1, 1);
-        hoodConfig.smartCurrentLimit(40);
+        hoodConfig.smartCurrentLimit(30);
         configureMotor(hoodmotor, hoodConfig, "hood");
 
         if (hoodmotor != null) {
@@ -156,7 +158,7 @@ public class Shooter extends SubsystemBase {
     /** Push fuel to the shooter. Clears intake-feed state. */
     public Command FeedOn() {
         return runOnce(() -> {
-            if (feedmotor != null) feedmotor.setVoltage(-6);
+            if (feedmotor != null) feedmotor.setVoltage(-6); 
             feedIsOn       = true;
             intakeFeedIsOn = false;
         });
@@ -287,6 +289,9 @@ public class Shooter extends SubsystemBase {
     public void periodic() {
         if (hoodEncoder    != null) SmartDashboard.putNumber("Hood",             hoodEncoder.getPosition());
         if (shooterEncoder != null) SmartDashboard.putNumber("Shooter Velocity", shooterEncoder.getVelocity());
+        SmartDashboard.putNumber("Shooter Voltage", shootermotor.getAppliedOutput()*shootermotor.getBusVoltage());
+        SmartDashboard.putNumber("Shooter1Temp", shootermotor.getMotorTemperature());
+        SmartDashboard.putNumber("Shooter2Temp", shootermotor2.getMotorTemperature());
         SmartDashboard.putBoolean("Shooter-FeedIsOn",       feedIsOn);
         SmartDashboard.putBoolean("Shooter-IntakeFeedIsOn", intakeFeedIsOn);
         SmartDashboard.putBoolean("Shooter-ShooterIsOn",    shooterIsOn);

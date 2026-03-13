@@ -37,6 +37,7 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -123,6 +124,7 @@ public class SwerveSubsystem extends SubsystemBase
     if (visionDriveTest && !RobotBase.isSimulation()) {
       vision.updatePoseEstimation(swerveDrive);
     }
+    SmartDashboard.putNumber("DistancetoHub", DistancetoHub());
   }
 
   @Override
