@@ -31,7 +31,7 @@ public class Shooter extends SubsystemBase {
     private final RelativeEncoder           hoodEncoder;
     private final RelativeEncoder           shooterEncoder;
 
-    private double  shootspeed       = 4200;
+    private double  shootspeed       = 3500;
     private boolean shooterIsOn      = false;
     private boolean feedIsOn         = false;
     private boolean intakeFeedIsOn   = false;

@@ -2,6 +2,8 @@ package frc.robot.commands;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import frc.robot.Constants;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
@@ -33,12 +35,12 @@ public final class Shoot extends Command {
         System.out.println("Set Shoot Speed: " + (distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC));
         System.out.println("moveHood: " + (distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC));
         // Configure speed and angle based on range, then toggle shooter + feed
-        m_shooter.setShootSpeed(distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC).schedule();   
-        m_shooter.moveHood(distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC).schedule();
-        m_shooter.toggleShooter().schedule();
-        new WaitCommand(1.0);
-        m_shooter.toggleFeed().schedule();
-        m_intake.toggleFeedMode().schedule();
+        new ParallelCommandGroup(m_shooter.setShootSpeed(distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC), 
+            m_shooter.moveHood(distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC), 
+            m_shooter.toggleShooter()
+            ).andThen(
+                new WaitCommand(3.0)
+                ).andThen( new ParallelCommandGroup(    m_shooter.toggleFeed(),  m_intake.toggleFeedMode() )).schedule();
     }
 
     @Override

@@ -1,7 +1,12 @@
 package frc.robot.subsystems;
 
+import com.revrobotics.REVLibError;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -15,6 +20,9 @@ public class Intake extends SubsystemBase {
 
     private final SparkFlex intakeMotor1;
     private final SparkMax  intakeMotor2;
+    private SparkFlexConfig intakeConfig1;
+    private SparkMaxConfig intakeConfig2;
+
     private boolean intakeIsOn = false;
     private boolean feedIsOn   = false;
 
@@ -33,6 +41,28 @@ public class Intake extends SubsystemBase {
         }
         intakeMotor1 = m1;
         intakeMotor2 = m2;
+        intakeConfig1 = new SparkFlexConfig();
+        intakeConfig1.smartCurrentLimit(20);
+        intakeConfig2 = new SparkMaxConfig();
+        intakeConfig2.smartCurrentLimit(20);
+        configureMotorFlex(intakeMotor1, intakeConfig1, "intake1");
+        configureMotor(intakeMotor2, intakeConfig2, "intake2");
+    }
+
+    private void configureMotor(SparkMax motor, SparkMaxConfig config, String name) {
+        if (motor == null) return;
+        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters,
+                                          PersistMode.kPersistParameters);
+        if (err != REVLibError.kOk)
+            DriverStation.reportError("Failed to configure " + name + " motor: " + err, true);
+    }
+
+    private void configureMotorFlex(SparkFlex motor, SparkFlexConfig config, String name) {
+        if (motor == null) return;
+        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters,
+                                          PersistMode.kPersistParameters);
+        if (err != REVLibError.kOk)
+            DriverStation.reportError("Failed to configure " + name + " motor: " + err, true);
     }
 
     private void setVoltages(double v1, double v2) {
