@@ -42,9 +42,9 @@ public class Intake extends SubsystemBase {
         intakeMotor1 = m1;
         intakeMotor2 = m2;
         intakeConfig1 = new SparkFlexConfig();
-        intakeConfig1.smartCurrentLimit(20);
+        intakeConfig1.smartCurrentLimit(30);
         intakeConfig2 = new SparkMaxConfig();
-        intakeConfig2.smartCurrentLimit(20);
+        intakeConfig2.smartCurrentLimit(30);
         configureMotorFlex(intakeMotor1, intakeConfig1, "intake1");
         configureMotor(intakeMotor2, intakeConfig2, "intake2");
     }
@@ -124,6 +124,18 @@ public class Intake extends SubsystemBase {
                 setVoltages(FEED_VOLTAGE, FEED_VOLTAGE);
                 feedIsOn   = true;
                 intakeIsOn = false;
+            }
+        });
+    }
+    public Command toggleReverseIntake(){
+         return runOnce(() -> {
+            if (intakeIsOn) {
+                setVoltages(0, 0);
+                intakeIsOn = false;
+            } else {
+                setVoltages(INTAKE_VOLTAGE, -INTAKE_VOLTAGE);
+                intakeIsOn = true;
+                feedIsOn   = false;
             }
         });
     }

@@ -202,7 +202,8 @@ public class RobotContainer {
     xboxController.leftTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerveDrive));
     xboxController.x().onTrue(m_Lights.pink());
     xboxController.povUp().onTrue(m_Shooter.adjustHoodup());
-   xboxController.povDown().onTrue(m_Shooter.adjustHooddown());
+    xboxController.povDown().onTrue(m_Shooter.adjustHooddown());
+    xboxController.b().onTrue(m_intake.toggleReverseIntake());
     }
 
   /**
