@@ -38,13 +38,14 @@ public final class testShoot extends Command {
         System.out.println("ShootSpeed: " + shooterspeed);
         System.out.println("HoodAngle: " + hoodangle);
         // Configure speed and angle based on range, then toggle shooter + feed
-        /* 
+        
         m_shooter.setShootSpeed(shooterspeed).schedule();
         m_shooter.moveHood(hoodangle).schedule();
         m_shooter.toggleShooter().schedule();
-        new WaitCommand(5.0).schedule();;
-        m_shooter.toggleFeed().schedule();
-        m_intake.toggleFeedMode().schedule();*/
+        new WaitCommand(2.0).andThen(m_shooter.toggleFeed()).andThen(m_intake.toggleFeedMode()).schedule();
+        //m_shooter.toggleFeed().schedule();
+        //m_intake.toggleFeedMode().schedule();
+        /* 
         new ParallelCommandGroup(m_shooter.setShootSpeed(shooterspeed), 
             m_shooter.moveHood(hoodangle), 
             m_shooter.toggleShooter()
@@ -53,7 +54,7 @@ public final class testShoot extends Command {
             ).andThen( new ParallelCommandGroup(   
                  m_shooter.toggleFeed(),  
                  m_intake.toggleFeedMode() )
-            ).schedule();
+            ).schedule();*/
     }
 
     @Override

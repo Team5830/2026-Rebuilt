@@ -34,7 +34,7 @@ public class Hopper extends SubsystemBase {
                 .forwardSoftLimitEnabled(true)
                 .reverseSoftLimit(Constants.hopper.reverselimit)
                 .reverseSoftLimitEnabled(true);
-                hoppermotorConfig.smartCurrentLimit(20);
+                hoppermotorConfig.smartCurrentLimit(45);
             var configret = hoppermotor.configure(hoppermotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
             if (REVLibError.kOk != configret){
                 DriverStation.reportError("Failed to configure hopper motor " + configret, true);
@@ -51,14 +51,14 @@ public class Hopper extends SubsystemBase {
         });
     }
     public void toggleHopper() {
-        if (hopperOut) {
+        if (encoder.getPosition()<-1.8) {
             retractHopper();
             hopperOut = false;
-            System.out.println("Hopper retracted");
+            //System.out.println("Hopper retracted");
         } else{
             extendHopper();
             hopperOut = true;
-            System.out.println("Hopper extended");
+            //System.out.println("Hopper extended");
         }; 
     }
 
@@ -66,7 +66,7 @@ public class Hopper extends SubsystemBase {
         hoppermotor.setVoltage(-6);
     }
     public void retractHopper() {
-        hoppermotor.setVoltage(8);
+        hoppermotor.setVoltage(11);
     }
 
   @Override
