@@ -54,14 +54,14 @@ public final class AimAtHub extends Command {
     public void initialize() {
         targetTag = isRedAlliance() ? RED_TAG : BLUE_TAG;
 
-        Pose2d tagPose     = swerve.GetTagPose(targetTag);
-        double distanceToTag = swerve.getDistanceToTag(targetTag);
+        //Pose2d tagPose     = swerve.GetTagPose(targetTag);
+        //double distanceToTag = swerve.getDistanceToTag(targetTag);
         double targetAngleRad = angleToHub();
         targetAngleDegrees    = Math.toDegrees(targetAngleRad);
 
-        System.out.printf("AimAtHub: Tag=%d  X=%.2f  Y=%.2f  Heading=%.1f°  Dist=%.2fm%n",
-                          targetTag, tagPose.getX(), tagPose.getY(),
-                          targetAngleDegrees, distanceToTag);
+        //System.out.printf("AimAtHub: Tag=%d  X=%.2f  Y=%.2f  Heading=%.1f°  Dist=%.2fm%n",
+        //                  targetTag, tagPose.getX(), tagPose.getY(),
+         //                 targetAngleDegrees, distanceToTag);
 
         aimcmd = swerve.fieldDriveCommand(
             () -> MathUtil.applyDeadband(-joystick.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND),
@@ -81,8 +81,8 @@ public final class AimAtHub extends Command {
         SmartDashboard.putNumber("DistanceToHub", distanceToTag);
 
         double headingError = Math.abs(swerve.getPose().getRotation().getDegrees() - targetAngleDegrees);
-        System.out.printf("AimAtHub: Tag=%d Heading=%.1f° Error=%.1f° Dist=%.2fm%n",
-                          targetTag, targetAngleDegrees, headingError, distanceToTag);
+        //System.out.printf("AimAtHub: Tag=%d Heading=%.1f° Error=%.1f° Dist=%.2fm%n",
+        //                  targetTag, targetAngleDegrees, headingError, distanceToTag);
 
         if (headingError < AIM_TOLERANCE_DEG) {
             lights.green_on().schedule();
@@ -93,7 +93,7 @@ public final class AimAtHub extends Command {
 
     @Override
     public void end(boolean interrupted) {
-        System.out.println("AimAtHub ended (interrupted=" + interrupted + ")");
+        //System.out.println("AimAtHub ended (interrupted=" + interrupted + ")");
         if (aimcmd != null) aimcmd.cancel();
         lights.off().schedule();
     }

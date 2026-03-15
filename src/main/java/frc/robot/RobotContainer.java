@@ -9,6 +9,7 @@ import frc.robot.Constants.intake;
 import frc.robot.commands.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
@@ -33,6 +34,8 @@ import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.trajectory.PathPlannerTrajectory;
+import com.pathplanner.lib.util.FlippingUtil;
 
 
 /**
@@ -65,6 +68,14 @@ public class RobotContainer {
     NamedCommands.registerCommand("ToggleHopper", m_hopper.toggleHopperCommand());
     driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
     driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
+
+    try {
+          joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
+          xboxController = new CommandXboxController(Constants.controller.xboxPort2); // Creates an XboxController on port 2.
+        } catch (RuntimeException ex) {
+          DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
+        }
+
     driveChooser.onChange((selectedOption)->{
       FieldOrientedDrive = selectedOption;
       System.out.println("field drive value"+selectedOption);
@@ -90,7 +101,10 @@ public class RobotContainer {
         () -> -joystick1.getRawAxis(5)
         ); */
       }
-      m_swerveDrive.setDefaultCommand(driveCmd);
+      
+      
+      
+    m_swerveDrive.setDefaultCommand(driveCmd);
     });
     // Autochooser must be setup after the named commands
     autoChooser = AutoBuilder.buildAutoChooser("Auto1");
@@ -110,19 +124,15 @@ public class RobotContainer {
         startingPose = new Pose2d(path0.getPoint(0).position, path0.getIdealStartingState().rotation());
       }
       m_swerveDrive.resetOdometry(startingPose);
-    
+      m_swerveDrive.zeroGyro();  
+      
       System.out.println("Selected option: " + selectedOption + "   "+selectedOption.getName());
       System.out.println("pose: "+startingPose.getX()+", "+startingPose.getY());
       
       // Perform actions based on the selected option
       });
 
-    try {
-      joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
-      xboxController = new CommandXboxController(Constants.controller.xboxPort2); // Creates an XboxController on port 2.
-    } catch (RuntimeException ex) {
-      DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
-    }
+    
     
     //if (m_swerveDrive.driveField){
 
@@ -153,11 +163,18 @@ public class RobotContainer {
     SmartDashboard.putData("Up", new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
     SmartDashboard.putData("Down",new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
     SmartDashboard.putData("Right", new AutoWaypoints(m_swerveDrive, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
-    SmartDashboard.putData("toggleIntake", m_intake.toggleIntake());
+    SmartDashboard.putData("INTAKEtoggleIntake", m_intake.toggleIntake()); //new ParallelCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(), m_Lights.red()));
+    SmartDashboard.putData("INTAKEtoggleFeed", m_intake.toggleFeedMode()); 
+    SmartDashboard.putData("INTAKEtoggleIntake", m_intake.toggleIntake()); 
+    SmartDashboard.putData("ShootertoggleFeed", m_Shooter.toggleFeed());
+    SmartDashboard.putData("ShooterFeedOn", m_Shooter.FeedOn());
+    SmartDashboard.putData("ShooterFeedOff", m_Shooter.FeedOff());
+    SmartDashboard.putData("ShootertoggleInakeFeed", m_Shooter.toggleIntakeFeed());
+    SmartDashboard.putData("ShootertoggleShooter", m_Shooter.toggleShooter());
     SmartDashboard.putData("INTAKE ON", m_intake.IntakeOn());
     SmartDashboard.putData("INTAKE OFF", m_intake.IntakeOff());
     SmartDashboard.putData("Feed Off", m_intake.FeedOff());
-     SmartDashboard.putData("Feed on", m_intake.FeedOn());
+    SmartDashboard.putData("Feed on", m_intake.FeedOn());
     SmartDashboard.putNumber("ShooterSpeed", 4200);
     SmartDashboard.putNumber("HoodAngle", 10);
     
@@ -181,18 +198,22 @@ public class RobotContainer {
     /* Driver Controls Port 1 */
     joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1, m_Lights));
     joystick1.back().onTrue( m_swerveDrive.ToggleBrake());
-    joystick1.rightTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerveDrive));
     joystick1.povLeft().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     joystick1.povUp().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
     joystick1.povDown().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
     joystick1.povRight().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
+    joystick1.start().onTrue(new InstantCommand(m_swerveDrive::zeroGyro));
     
     /*Co-driver controls  Port 2 */
     //xboxController.povUp().onTrue( m_climber.Up());
     //xboxController.povDown().onTrue(m_climber.Down());
     xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(), m_Lights.red()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
-   
+    xboxController.leftTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerveDrive));
+    xboxController.x().onTrue(m_Lights.pink());
+    xboxController.povUp().onTrue(m_Shooter.adjustHoodup());
+    xboxController.povDown().onTrue(m_Shooter.adjustHooddown());
+    xboxController.b().onTrue(m_intake.toggleReverseIntake());
     }
 
   /**
