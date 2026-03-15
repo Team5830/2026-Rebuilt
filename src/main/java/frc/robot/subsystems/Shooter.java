@@ -56,7 +56,7 @@ public class Shooter extends SubsystemBase {
         // --- Shooter wheels ---
         SparkFlexConfig shooterConfig = new SparkFlexConfig();
         shooterConfig.idleMode(IdleMode.kCoast);
-        shooterConfig.smartCurrentLimit(30);
+        shooterConfig.smartCurrentLimit(40);
         shooterConfig.closedLoop
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .pid(0.003, 0.0, 0.18);
@@ -71,7 +71,7 @@ public class Shooter extends SubsystemBase {
         // --- Shooter follower ---
         SparkFlexConfig shooter2Config = new SparkFlexConfig();
         shooter2Config.idleMode(IdleMode.kCoast);
-        shooter2Config.smartCurrentLimit(30);
+        shooter2Config.smartCurrentLimit(40);
         if (shootermotor != null) shooter2Config.follow(shootermotor, true);
         configureMotorFlex(shootermotor2, shooter2Config, "shooter2");
 
@@ -272,7 +272,7 @@ public class Shooter extends SubsystemBase {
                 if (feedmotor != null) feedmotor.setVoltage(0);
                 intakeFeedIsOn = false;
             } else {
-                if (feedmotor != null) feedmotor.setVoltage(1.5);
+                if (feedmotor != null) feedmotor.setVoltage(3);
                 intakeFeedIsOn = true;
                 feedIsOn       = false;
             }
