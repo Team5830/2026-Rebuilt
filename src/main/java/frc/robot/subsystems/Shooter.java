@@ -274,7 +274,7 @@ public class Shooter extends SubsystemBase {
                 if (feedmotor != null) feedmotor.setVoltage(0);
                 intakeFeedIsOn = false;
             } else {
-                if (feedmotor != null) feedmotor.setVoltage(1.5);
+                if (feedmotor != null) feedmotor.setVoltage(3);
                 intakeFeedIsOn = true;
                 feedIsOn       = false;
             }
