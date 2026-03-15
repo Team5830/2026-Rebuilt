@@ -34,14 +34,10 @@ public final class AimAtHub extends Command {
         this.lights   = lights;
     }
 
-    private boolean isRedAlliance() {
-        var alliance = DriverStation.getAlliance();
-        return alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red;
-    }
 
     /** Returns the angle (radians) from the robot to the hub behind the selected tag. */
     private double angleToHub() {
-        boolean red     = isRedAlliance();
+        boolean red     = swerve.isRedAlliance();
         Pose2d tagpose  = swerve.GetTagPose(targetTag);
         // Offset toward hub behind tag
         double offsetX  = red ? -HUB_OFFSET_M : HUB_OFFSET_M;
@@ -52,7 +48,7 @@ public final class AimAtHub extends Command {
 
     @Override
     public void initialize() {
-        targetTag = isRedAlliance() ? RED_TAG : BLUE_TAG;
+        targetTag = swerve.isRedAlliance() ? RED_TAG : BLUE_TAG;
 
         //Pose2d tagPose     = swerve.GetTagPose(targetTag);
         //double distanceToTag = swerve.getDistanceToTag(targetTag);
