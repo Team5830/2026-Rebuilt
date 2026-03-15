@@ -34,6 +34,8 @@ import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.trajectory.PathPlannerTrajectory;
+import com.pathplanner.lib.util.FlippingUtil;
 
 
 /**
@@ -72,6 +74,14 @@ public class RobotContainer {
     NamedCommands.registerCommand("ToggleHopper", m_hopper.toggleHopperCommand());
     driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
     driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
+
+    try {
+          joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
+          xboxController = new CommandXboxController(Constants.controller.xboxPort2); // Creates an XboxController on port 2.
+        } catch (RuntimeException ex) {
+          DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
+        }
+
     driveChooser.onChange((selectedOption)->{
       FieldOrientedDrive = selectedOption;
       System.out.println("field drive value"+selectedOption);
@@ -97,7 +107,10 @@ public class RobotContainer {
         () -> -joystick1.getRawAxis(5)
         ); */
       }
-      m_swerveDrive.setDefaultCommand(driveCmd);
+      
+      
+      
+    m_swerveDrive.setDefaultCommand(driveCmd);
     });
     // Autochooser must be setup after the named commands
     autoChooser = AutoBuilder.buildAutoChooser("Auto1");
@@ -166,6 +179,7 @@ public class RobotContainer {
     joystick1.povUp().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
     joystick1.povDown().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
     joystick1.povRight().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
+    joystick1.start().onTrue(new InstantCommand(m_swerveDrive::zeroGyro));
     
     /*Co-driver controls  Port 2 */
     //xboxController.povUp().onTrue( m_climber.Up());
