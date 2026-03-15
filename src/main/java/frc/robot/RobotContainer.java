@@ -60,6 +60,12 @@ public class RobotContainer {
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     m_swerveDrive =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
+    try {
+      joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
+      xboxController = new CommandXboxController(Constants.controller.xboxPort2); // Creates an XboxController on port 2.
+    } catch (RuntimeException ex) {
+      DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
+    }
     NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
     NamedCommands.registerCommand("ToggleShoot", new Shoot(m_Shooter, m_intake, m_swerveDrive));
     NamedCommands.registerCommand("ToggleIntake", m_intake.toggleIntake());
@@ -104,43 +110,10 @@ public class RobotContainer {
       }catch( Exception ex){ 
         System.out.println("Failed to parse autopath"+selectedOption.getName());
 
-      }
-      Pose2d startingPose = new Pose2d(0,0,Rotation2d.kZero);
-      if (!pathsInAuto.isEmpty()) {
-        PathPlannerPath path0 = pathsInAuto.get(0);
-        startingPose = new Pose2d(path0.getPoint(0).position, path0.getIdealStartingState().rotation());
-      }
-      m_swerveDrive.resetOdometry(startingPose);
-    
-      System.out.println("Selected option: " + selectedOption + "   "+selectedOption.getName());
-      System.out.println("pose: "+startingPose.getX()+", "+startingPose.getY());
-      
+      }  
       // Perform actions based on the selected option
       });
 
-    try {
-      joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
-      xboxController = new CommandXboxController(Constants.controller.xboxPort2); // Creates an XboxController on port 2.
-    } catch (RuntimeException ex) {
-      DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
-    }
-    
-    //if (m_swerveDrive.driveField){
-
-        
-   // }else{ 
-   /* 
-      oneDrive = m_swerveDrive.fieldDriveCommand( () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND), // X
-        () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND), // Y 
-        () -> -joystick1.getRawAxis(4),                                                               // Angle 1
-        () -> -joystick1.getRawAxis(5)
-        );*/
-   // }
-      /* -> driveCommand can take a single value for rotation or two for the specific target angle -> so take angle and pass cos(theta), sin(theta)
-        Might also need to turn on heading correct
-        Call just one drive command here, split options in servedrive.
-      */
-    //m_swerveDrive.setDefaultCommand(oneDrive);
 
     SmartDashboard.putData("Auto Chooser", autoChooser);
     SmartDashboard.putData("Drive Chooser", driveChooser);
@@ -204,6 +177,9 @@ public class RobotContainer {
     xboxController.povUp().onTrue(m_Shooter.adjustHoodup());
     xboxController.povDown().onTrue(m_Shooter.adjustHooddown());
     xboxController.b().onTrue(m_intake.toggleReverseIntake());
+    }
+    public void zeroTeleopFieldOrientation(){
+      m_swerveDrive.zeroTeleopFieldOrientation();
     }
 
   /**

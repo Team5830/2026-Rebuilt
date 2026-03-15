@@ -439,6 +439,18 @@ public class SwerveSubsystem extends SubsystemBase
     swerveDrive.zeroGyro();
   }
 
+  public void zeroTeleopFieldOrientation()
+  {
+    Rotation2d allianceHeading = isRedAlliance() ? Rotation2d.fromDegrees(180) : Rotation2d.fromDegrees(0);
+    Pose2d currentPose = getPose(); 
+    resetOdometry(new Pose2d(currentPose.getTranslation(), allianceHeading));
+  }
+
+  public Command zeroTeleopFieldOrientationCommand()
+  {
+    return runOnce(this::zeroTeleopFieldOrientation);
+  }
+
   public boolean isRedAlliance()
   {
     var alliance = DriverStation.getAlliance();
