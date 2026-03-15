@@ -64,7 +64,7 @@ public final class AimAtHub extends Command {
             () -> MathUtil.applyDeadband(-joystick.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND),
             () -> Math.sin(angleToHub()),
             () -> Math.cos(angleToHub())
-        ).onlyWhile(() -> Math.hypot(joystick.getRawAxis(4), joystick.getRawAxis(5)) < 0.1);
+        ).onlyWhile(() -> Math.hypot(joystick.getRawAxis(4), joystick.getRawAxis(5)) < 0.2);
 
         aimcmd.initialize();
     }
