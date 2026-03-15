@@ -39,15 +39,10 @@ public final class AutoWaypoints extends Command {
         this.targetPose = targetPose;
     }
 
-    private boolean isRedAlliance() {
-        var alliance = DriverStation.getAlliance();
-        return alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red;
-    }
-
     @Override
     public void initialize() {
         Pose2d currentPose = swerve.getPose();
-        boolean red        = isRedAlliance();
+        boolean red        = swerve.isRedAlliance();
 
         // Flip target to red side if needed
         Pose2d resolvedTarget = red ? FlippingUtil.flipFieldPose(targetPose) : targetPose;
