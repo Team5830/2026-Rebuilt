@@ -244,8 +244,7 @@ public class NewSwerve extends SubsystemBase {
         new Translation2d(cs.vxMetersPerSecond, cs.vyMetersPerSecond).getNorm());
   }
 
-
-
+  
       //This is how 614 did their simulationPeriodic, I decided our way looked better.
       /*@Override
       public void simulationPeriodic(){
