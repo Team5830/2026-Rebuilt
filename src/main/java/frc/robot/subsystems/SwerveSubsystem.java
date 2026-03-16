@@ -218,6 +218,8 @@ public class SwerveSubsystem extends SubsystemBase
       drive(swerveDrive.swerveController.getRawTargetSpeeds(
           scaledInputs.getX(), scaledInputs.getY(),
           headingX.getAsDouble()*maxChassisAngularVelocity) );
+      
+
     });
   }
 
@@ -238,7 +240,8 @@ public class SwerveSubsystem extends SubsystemBase
     
       return run(() -> {
         Translation2d scaledInputs = SwerveMath.scaleTranslation(
-            new Translation2d(translationX.getAsDouble(), translationY.getAsDouble()), 0.9);
+            new Translation2d(isRedAlliance()?-translationX.getAsDouble():translationX.getAsDouble(), 
+            isRedAlliance()?-translationY.getAsDouble():translationY.getAsDouble()), 0.9);
         double hX = headingX.getAsDouble();
         double hY = headingY.getAsDouble();
 
@@ -247,6 +250,9 @@ public class SwerveSubsystem extends SubsystemBase
         double angle = swerveDrive.swerveController.withinHypotDeadband(hX, hY)
                       ? defaultAngle
                       : Math.atan2(hX, hY);
+        if(isRedAlliance()){
+          angle += Math.PI;
+        }
 
         driveFieldOriented(swerveDrive.swerveController.getTargetSpeeds(
             scaledInputs.getX(), scaledInputs.getY(),

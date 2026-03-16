@@ -60,7 +60,7 @@ public class Shooter extends SubsystemBase {
         shooterConfig.closedLoopRampRate(0.3);
         shooterConfig.closedLoop
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-            .pid(0.003, 0.0, 0.18);
+            .pid(0.05, 0.0, 0.18);
         configureMotorFlex(shootermotor, shooterConfig, "shooter");
         shooterEncoder = (shootermotor != null) ? shootermotor.getEncoder() : null;
 

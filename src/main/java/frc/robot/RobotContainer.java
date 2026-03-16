@@ -108,16 +108,21 @@ public class RobotContainer {
         ); */
       }
       
-      
+      driveCmd = m_swerveDrive.fieldDriveCommand(
+          () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND), // X
+          () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND), // Y 
+          () -> MathUtil.applyDeadband(-joystick1.getRawAxis(4), Constants.controller.LEFT_X_DEADBAND), // Angle 1
+          () -> MathUtil.applyDeadband(-joystick1.getRawAxis(5), Constants.controller.LEFT_Y_DEADBAND)  // Angle 2
+          );
       
     m_swerveDrive.setDefaultCommand(driveCmd);
     });
     // After driveChooser setup, force the default to apply immediately:
   driveCmd = m_swerveDrive.fieldDriveCommand(
-    () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND),
-    () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND),
-    () -> MathUtil.applyDeadband(-joystick1.getRawAxis(4), Constants.controller.LEFT_X_DEADBAND), // Angle 1
-    () -> MathUtil.applyDeadband(-joystick1.getRawAxis(5), Constants.controller.LEFT_Y_DEADBAND)  // Angle 2
+    () -> MathUtil.applyDeadband(joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND),
+    () -> MathUtil.applyDeadband(joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND),
+    () -> MathUtil.applyDeadband(joystick1.getRawAxis(4), Constants.controller.LEFT_X_DEADBAND), // Angle 1
+    () -> MathUtil.applyDeadband(joystick1.getRawAxis(5), Constants.controller.LEFT_Y_DEADBAND)  // Angle 2
     );
 m_swerveDrive.setDefaultCommand(driveCmd);
     // Autochooser must be setup after the named commands

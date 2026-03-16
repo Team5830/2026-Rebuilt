@@ -5,8 +5,13 @@ import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.SwerveSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 
+import com.ctre.phoenix6.signals.IsPROLicensedValue;
+import com.pathplanner.lib.util.FlippingUtil;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -42,7 +47,12 @@ public final class AimAtHub extends Command {
         // Offset toward hub behind tag
         double offsetX  = red ? -HUB_OFFSET_M : HUB_OFFSET_M;
         Pose2d hubpose  = new Pose2d(tagpose.getX() + offsetX, tagpose.getY(), tagpose.getRotation());
-        Pose2d robot    = swerve.getPose();
+        Pose2d robot    = swerve.getPose(); //swerve.isRedAlliance()? FlippingUtil.flipFieldRotation(robot.getRotation())
+        
+        if (swerve.isRedAlliance()){
+            robot.transformBy(new Transform2d(0, 0, Rotation2d.fromDegrees(180)));
+            //robot = new Pose2d(robot.getTranslation(), FlippingUtil.flipFieldRotation(robot.getRotation()));
+        }
         return Math.atan2(hubpose.getY() - robot.getY(), hubpose.getX() - robot.getX());
     }
 
@@ -53,7 +63,7 @@ public final class AimAtHub extends Command {
         //Pose2d tagPose     = swerve.GetTagPose(targetTag);
         //double distanceToTag = swerve.getDistanceToTag(targetTag);
         double targetAngleRad = angleToHub();
-        targetAngleDegrees    = Math.toDegrees(targetAngleRad);
+        targetAngleDegrees    = targetAngleRad; //Math.toDegrees(swerve.isRedAlliance()?targetAngleRad+Math.PI:targetAngleRad);
 
         //System.out.printf("AimAtHub: Tag=%d  X=%.2f  Y=%.2f  Heading=%.1f°  Dist=%.2fm%n",
         //                  targetTag, tagPose.getX(), tagPose.getY(),

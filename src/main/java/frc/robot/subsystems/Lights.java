@@ -44,13 +44,13 @@ public class Lights extends SubsystemBase {
             lightson = false;
             ledPattern = LEDPattern.kOff;
             scroll = false;
-            System.out.println(name + " toggled OFF");
+            //System.out.println(name + " toggled OFF");
         } else {
             color = name;
             lightson = true;
             ledPattern = pattern.atBrightness(Percent.of(brightness));
             scroll = scrolling;
-            System.out.println(name + " toggled ON");
+            //System.out.println(name + " toggled ON");
         }
         ledPattern.applyTo(m_ledBuffer);
         m_led.setData(m_ledBuffer);
@@ -69,7 +69,7 @@ public class Lights extends SubsystemBase {
             scroll = false;
             ledPattern.applyTo(m_ledBuffer);
             m_led.setData(m_ledBuffer);
-            System.out.println("Lights off");
+            //System.out.println("Lights off");
         });
     }
 
