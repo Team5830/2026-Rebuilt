@@ -47,6 +47,7 @@ import com.pathplanner.lib.util.FlippingUtil;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private SwerveSubsystem m_swerveDrive;
+  private NewSwerve m_swerve;
   private Shooter m_Shooter =  new Shooter();
   //private Climber m_climber = new Climber(); 
   private Hopper m_hopper   = new Hopper();
@@ -61,14 +62,14 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    m_swerveDrive =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
+    m_swerve =  new NewSwerve(new File(Filesystem.getDeployDirectory(),"swerve"));
     try {
       joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
       xboxController = new CommandXboxController(Constants.controller.xboxPort2); // Creates an XboxController on port 2.
     } catch (RuntimeException ex) {
       DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
     }
-    NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
+    NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerve, joystick1, m_Lights));
     NamedCommands.registerCommand("ToggleShoot", new Shoot(m_Shooter, m_intake, m_swerveDrive));
     NamedCommands.registerCommand("ToggleIntake", m_intake.toggleIntake());
     NamedCommands.registerCommand("ToggleHopper", m_hopper.toggleHopperCommand());
@@ -130,7 +131,7 @@ public class RobotContainer {
 
     SmartDashboard.putData("Auto Chooser", autoChooser);
     SmartDashboard.putData("Drive Chooser", driveChooser);
-    SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
+    SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerve, joystick1, m_Lights));
     SmartDashboard.putData("drive",new AutoWaypoints(m_swerveDrive,  new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     SmartDashboard.putData("Blue Lights",m_Lights.blue());
     SmartDashboard.putData("Lights off",m_Lights.off());
@@ -173,7 +174,7 @@ public class RobotContainer {
    */
   private void configureBindings() {
     /* Driver Controls Port 1 */
-    joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1, m_Lights));
+    joystick1.b().onTrue(new AimAtHub(m_swerve, joystick1, m_Lights));
     joystick1.back().onTrue( m_swerveDrive.ToggleBrake());
     joystick1.povLeft().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     joystick1.povUp().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
