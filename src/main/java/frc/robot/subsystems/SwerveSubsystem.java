@@ -89,8 +89,13 @@ public class SwerveSubsystem extends SubsystemBase {
         constraints = new PathConstraints(
         maxChassisVelocity, 3.0,
         maxChassisAngularVelocity, Units.degreesToRadians(720));
-        Pose2d startingPose = isRedAlliance() ? new Pose2d(new Translation2d(Meter.of(1), Meter.of(4)), Rotation2d.fromDegrees(0)) 
-                                              : new Pose2d(new Translation2d(Meter.of(16), Meter.of(4)), Rotation2d.fromDegrees(180));
+
+        Pose2d startingPose = isRedAlliance() ? new Pose2d(new Translation2d(Meter.of(1),
+                                                                      Meter.of(4)),
+                                                    Rotation2d.fromDegrees(0))
+                                       : new Pose2d(new Translation2d(Meter.of(16),
+                                                                      Meter.of(4)),
+                                                    Rotation2d.fromDegrees(180));
     }
 
     
