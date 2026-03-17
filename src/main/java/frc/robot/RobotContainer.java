@@ -63,6 +63,7 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+    
     m_swerve =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
     try {
       joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
@@ -94,7 +95,8 @@ public class RobotContainer {
             .allianceRelativeControl(true);
 
        SwerveInputStream driveAngle = driveAngularVelocity.copy()
-            .withControllerHeadingAxis(() ->-joystick1.getRawAxis(5), () ->-joystick1.getRawAxis(4))
+            .withControllerHeadingAxis(() ->-joystick1.getRawAxis(4), () ->-joystick1.getRawAxis(5))
+            .headingWhile(true)
             .deadband(Constants.controller.DEADBAND)
             .scaleTranslation(0.95)
             .allianceRelativeControl(true);
@@ -182,7 +184,7 @@ public class RobotContainer {
     /*Co-driver controls  Port 2 */
     //xboxController.povUp().onTrue( m_climber.Up());
     //xboxController.povDown().onTrue(m_climber.Down());
-    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(), m_Lights.red()));
+    //xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(), m_Lights.red()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
     xboxController.leftTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerve));
     xboxController.x().onTrue(m_Lights.pink());
