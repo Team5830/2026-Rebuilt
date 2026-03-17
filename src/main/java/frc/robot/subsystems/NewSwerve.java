@@ -260,12 +260,12 @@ public class NewSwerve extends SubsystemBase {
        
     @Override
   public void simulationPeriodic() {
-    vision.simulationPeriodic(swerveDrive.getPose());
-    var debugField = vision.getSimDebugField();
-    debugField.getObject("EstimatedRobot").setPose(swerveDrive.getPose());
-    if (vision != null) {
-    vision.simulationPeriodic(swerveDrive.getPose());
-    }
+    //vision.simulationPeriodic(swerveDrive.getPose());
+    //var debugField = vision.getSimDebugField();
+   // debugField.getObject("EstimatedRobot").setPose(swerveDrive.getPose());
+   // if (vision != null) {
+   // vision.simulationPeriodic(swerveDrive.getPose());
+   // }
   }
 
   public void addVisionMeasurement(Pose2d visionPose, double timestampSeconds){
