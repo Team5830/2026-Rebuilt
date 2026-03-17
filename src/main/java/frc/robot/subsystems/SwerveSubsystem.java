@@ -89,6 +89,8 @@ public class SwerveSubsystem extends SubsystemBase {
         constraints = new PathConstraints(
         maxChassisVelocity, 3.0,
         maxChassisAngularVelocity, Units.degreesToRadians(720));
+        Pose2d startingPose = isRedAlliance() ? new Pose2d(new Translation2d(Meter.of(1), Meter.of(4)), Rotation2d.fromDegrees(0)) 
+                                              : new Pose2d(new Translation2d(Meter.of(16), Meter.of(4)), Rotation2d.fromDegrees(180));
     }
 
     
@@ -466,11 +468,11 @@ public DriverStation.Alliance getAlliance() {
   }
 
   public Command robotDriveCommand(DoubleSupplier translationX, DoubleSupplier translationY,
-                              DoubleSupplier headingX, DoubleSupplier headingY)
-  {
+                              DoubleSupplier headingX, DoubleSupplier headingY) {
     return run(() -> {
       Translation2d scaledInputs = SwerveMath.scaleTranslation(
-          new Translation2d(translationX.getAsDouble(), translationY.getAsDouble()), 0.9*maxChassisVelocity);
+          new Translation2d(isRedAlliance()? -translationX.getAsDouble():-translationX.getAsDouble(), 
+          isRedAlliance()?translationY.getAsDouble():-translationY.getAsDouble()), 0.9*maxChassisVelocity);
       drive(swerveDrive.swerveController.getRawTargetSpeeds(
           scaledInputs.getX(), scaledInputs.getY(),
           headingX.getAsDouble()*maxChassisAngularVelocity) );
