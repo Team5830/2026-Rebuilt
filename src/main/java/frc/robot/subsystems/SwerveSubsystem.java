@@ -341,7 +341,7 @@ public DriverStation.Alliance getAlliance() {
 /** Get distance to the hub (alliance-aware). */
   public double DistancetoHub() {
     // Select hub tag by alliance
-    int targetTag = (alliance == Alliance.Blue) ? 10 : 26;
+    int targetTag = (alliance == Alliance.Blue) ? 26 : 10;
     return getDistanceToTag(targetTag);
   }
 
