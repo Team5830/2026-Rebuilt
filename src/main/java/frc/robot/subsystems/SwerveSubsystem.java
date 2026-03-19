@@ -486,11 +486,11 @@ public DriverStation.Alliance getAlliance() {
   }
 
   public Command robotDriveCommand(DoubleSupplier translationX, DoubleSupplier translationY,
-                              DoubleSupplier headingX, DoubleSupplier headingY)
-  {
+                              DoubleSupplier headingX, DoubleSupplier headingY) {
     return run(() -> {
       Translation2d scaledInputs = SwerveMath.scaleTranslation(
-          new Translation2d(translationX.getAsDouble(), translationY.getAsDouble()), 0.9*maxChassisVelocity);
+          new Translation2d(isRedAlliance()? -translationX.getAsDouble():-translationX.getAsDouble(), 
+          isRedAlliance()?translationY.getAsDouble():-translationY.getAsDouble()), 0.9*maxChassisVelocity);
       drive(swerveDrive.swerveController.getRawTargetSpeeds(
           scaledInputs.getX(), scaledInputs.getY(),
           headingX.getAsDouble()*maxChassisAngularVelocity) );
