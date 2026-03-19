@@ -14,7 +14,6 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
-import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
@@ -58,7 +57,7 @@ import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 
 
-public class SwerveSubsystem extends SubsystemBase {
+public class NewSwerve extends SubsystemBase {
     private final SwerveDrive swerveDrive;
     public boolean brakeOn    = false;
     private Vision vision;
@@ -67,7 +66,7 @@ public class SwerveSubsystem extends SubsystemBase {
     public PathConstraints constraints;
     private AprilTagFieldLayout aprilTagFieldLayout;
 
-    public SwerveSubsystem(File directory){
+    public NewSwerve(File directory){
         /*Configure the telemetry before creating the swerve to avoid clutter.*/
         SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
         aprilTagFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
@@ -89,25 +88,18 @@ public class SwerveSubsystem extends SubsystemBase {
         constraints = new PathConstraints(
         maxChassisVelocity, 3.0,
         maxChassisAngularVelocity, Units.degreesToRadians(720));
-
-        Pose2d startingPose = isRedAlliance() ? new Pose2d(new Translation2d(Meter.of(1),
-                                                                      Meter.of(4)),
-                                                    Rotation2d.fromDegrees(0))
-                                       : new Pose2d(new Translation2d(Meter.of(16),
-                                                                      Meter.of(4)),
-                                                    Rotation2d.fromDegrees(180));
     }
 
     
   
 
-    public SwerveSubsystem(SwerveDriveConfiguration driveCfg, SwerveControllerConfiguration controllerCfg) {
+    public NewSwerve(SwerveDriveConfiguration driveCfg, SwerveControllerConfiguration controllerCfg) {
     swerveDrive =
         new SwerveDrive(
             driveCfg,
             controllerCfg,
             Constants.DriveTrain.maxSpeed,
-            new Pose2d(new Translation2d(Meter.of(3), Meter.of(3)), Rotation2d.fromDegrees(0)));
+            new Pose2d(new Translation2d(Meter.of(2), Meter.of(0)), Rotation2d.fromDegrees(0)));
             setupPathPlanner();
             setupPhotonVision();
   }
@@ -254,7 +246,7 @@ public class SwerveSubsystem extends SubsystemBase {
 
   
       //This is how 614 did their simulationPeriodic, I decided our way looked better.
-      @Override
+      /*@Override
       public void simulationPeriodic(){
       Optional<Pose2d> simPoseOptional = swerveDrive.getSimulationDriveTrainPose();
       if(simPoseOptional.isPresent()) {
@@ -263,35 +255,18 @@ public class SwerveSubsystem extends SubsystemBase {
         Pose2d odometryPose = getPose();
         double error = odometryPose.getTranslation().getDistance(simPose.getTranslation());
         }
-      }
+      }*/
     
-
-    public ChassisSpeeds getFieldVelocity()
-    {
-      return swerveDrive.getFieldVelocity();
-    }
-
-    public Command drivePath(PathPlannerPath path)
-    {
-      return AutoBuilder.followPath(path);
-    }
-
-
-    public boolean isRedAlliance()
-    {
-      var alliance = DriverStation.getAlliance();
-      return alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red;
-    }  
-   /*   
+       
     @Override
   public void simulationPeriodic() {
-    vision.simulationPeriodic(swerveDrive.getPose());
-    var debugField = vision.getSimDebugField();
-    debugField.getObject("EstimatedRobot").setPose(swerveDrive.getPose());
-    if (vision != null) {
-    vision.simulationPeriodic(swerveDrive.getPose());
-    }
-  } */
+    //vision.simulationPeriodic(swerveDrive.getPose());
+    //var debugField = vision.getSimDebugField();
+   // debugField.getObject("EstimatedRobot").setPose(swerveDrive.getPose());
+   // if (vision != null) {
+   // vision.simulationPeriodic(swerveDrive.getPose());
+   // }
+  }
 
   public void addVisionMeasurement(Pose2d visionPose, double timestampSeconds){
     swerveDrive.addVisionMeasurement(visionPose, timestampSeconds);
@@ -341,7 +316,7 @@ public DriverStation.Alliance getAlliance() {
 /** Get distance to the hub (alliance-aware). */
   public double DistancetoHub() {
     // Select hub tag by alliance
-    int targetTag = (alliance == Alliance.Blue) ? 26 : 10;
+    int targetTag = (alliance == Alliance.Blue) ? 10 : 26;
     return getDistanceToTag(targetTag);
   }
 
@@ -473,11 +448,11 @@ public DriverStation.Alliance getAlliance() {
   }
 
   public Command robotDriveCommand(DoubleSupplier translationX, DoubleSupplier translationY,
-                              DoubleSupplier headingX, DoubleSupplier headingY) {
+                              DoubleSupplier headingX, DoubleSupplier headingY)
+  {
     return run(() -> {
       Translation2d scaledInputs = SwerveMath.scaleTranslation(
-          new Translation2d(isRedAlliance()? -translationX.getAsDouble():-translationX.getAsDouble(), 
-          isRedAlliance()?translationY.getAsDouble():-translationY.getAsDouble()), 0.9*maxChassisVelocity);
+          new Translation2d(translationX.getAsDouble(), translationY.getAsDouble()), 0.9*maxChassisVelocity);
       drive(swerveDrive.swerveController.getRawTargetSpeeds(
           scaledInputs.getX(), scaledInputs.getY(),
           headingX.getAsDouble()*maxChassisAngularVelocity) );

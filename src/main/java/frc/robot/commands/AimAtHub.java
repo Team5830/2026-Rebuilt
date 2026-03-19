@@ -3,12 +3,14 @@ package frc.robot.commands;
 import frc.robot.Constants;
 import frc.robot.subsystems.Lights;
 import frc.robot.subsystems.SwerveSubsystem;
+import swervelib.SwerveInputStream;
 import edu.wpi.first.wpilibj2.command.Command;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 
 public final class AimAtHub extends Command {
     // Hub is 24 inches (converted to meters) behind the tag
@@ -17,7 +19,7 @@ public final class AimAtHub extends Command {
     private static final int    RED_TAG       = 10;
     private static final double AIM_TOLERANCE_DEG = 2.0;
 
-    private final SwerveSubsystem    swerve;
+    private SwerveSubsystem          swerve;
     private final edu.wpi.first.wpilibj2.command.button.CommandXboxController joystick;
     private final Lights             lights;
 
@@ -25,25 +27,23 @@ public final class AimAtHub extends Command {
     private double  targetAngleDegrees;
     private Command aimcmd;
 
+    
+
     public AimAtHub(SwerveSubsystem swerve,
                     edu.wpi.first.wpilibj2.command.button.CommandXboxController joystick,
                     Lights lights) {
         addRequirements(swerve);
-        this.swerve   = swerve;
+        this.swerve = swerve;
         this.joystick = joystick;
         this.lights   = lights;
     }
 
-    private boolean isRedAlliance() {
-        var alliance = DriverStation.getAlliance();
-        return alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red;
-    }
 
     /** Returns the angle (radians) from the robot to the hub behind the selected tag. */
     private double angleToHub() {
-        boolean red     = isRedAlliance();
         Pose2d tagpose  = swerve.GetTagPose(targetTag);
         // Offset toward hub behind tag
+        boolean red = swerve.getAlliance() == DriverStation.Alliance.Red;
         double offsetX  = red ? -HUB_OFFSET_M : HUB_OFFSET_M;
         Pose2d hubpose  = new Pose2d(tagpose.getX() + offsetX, tagpose.getY(), tagpose.getRotation());
         Pose2d robot    = swerve.getPose();
@@ -52,7 +52,8 @@ public final class AimAtHub extends Command {
 
     @Override
     public void initialize() {
-        targetTag = isRedAlliance() ? RED_TAG : BLUE_TAG;
+        
+        targetTag = swerve.getAlliance() == DriverStation.Alliance.Red ? RED_TAG : BLUE_TAG;
 
         Pose2d tagPose     = swerve.GetTagPose(targetTag);
         double distanceToTag = swerve.getDistanceToTag(targetTag);
@@ -60,9 +61,9 @@ public final class AimAtHub extends Command {
         targetAngleDegrees    = Math.toDegrees(targetAngleRad);
 
         System.out.printf("AimAtHub: Tag=%d  X=%.2f  Y=%.2f  Heading=%.1f°  Dist=%.2fm%n",
-                          targetTag, tagPose.getX(), tagPose.getY(),
-                          targetAngleDegrees, distanceToTag);
-
+                         targetTag, tagPose.getX(), tagPose.getY(),
+                         targetAngleDegrees, distanceToTag);
+        /*
         aimcmd = swerve.fieldDriveCommand(
             () -> MathUtil.applyDeadband(-joystick.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND),
             () -> MathUtil.applyDeadband(-joystick.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND),
@@ -71,6 +72,14 @@ public final class AimAtHub extends Command {
         ).onlyWhile(() -> Math.hypot(joystick.getRawAxis(4), joystick.getRawAxis(5)) < 0.1);
 
         aimcmd.initialize();
+         */
+        SwerveInputStream driveAngle =
+        SwerveInputStream.of(
+                swerve.getSwerveDrive(), () -> -joystick.getLeftY(), () -> -joystick.getLeftX())
+            .withControllerHeadingAxis(() -> Math.sin(angleToHub()), () -> Math.cos(angleToHub()))
+            .deadband(Constants.controller.DEADBAND)
+            .scaleTranslation(0.95)
+            .allianceRelativeControl(true);
     }
 
     @Override
@@ -81,8 +90,8 @@ public final class AimAtHub extends Command {
         SmartDashboard.putNumber("DistanceToHub", distanceToTag);
 
         double headingError = Math.abs(swerve.getPose().getRotation().getDegrees() - targetAngleDegrees);
-        System.out.printf("AimAtHub: Tag=%d Heading=%.1f° Error=%.1f° Dist=%.2fm%n",
-                          targetTag, targetAngleDegrees, headingError, distanceToTag);
+        //System.out.printf("AimAtHub: Tag=%d Heading=%.1f° Error=%.1f° Dist=%.2fm%n",
+        //                  targetTag, targetAngleDegrees, headingError, distanceToTag);
 
         if (headingError < AIM_TOLERANCE_DEG) {
             lights.green_on().schedule();
@@ -93,7 +102,7 @@ public final class AimAtHub extends Command {
 
     @Override
     public void end(boolean interrupted) {
-        System.out.println("AimAtHub ended (interrupted=" + interrupted + ")");
+        //System.out.println("AimAtHub ended (interrupted=" + interrupted + ")");
         if (aimcmd != null) aimcmd.cancel();
         lights.off().schedule();
     }

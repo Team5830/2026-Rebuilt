@@ -20,30 +20,31 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants;
-import com.revrobotics.spark.SparkBase;
 
 public class Shooter extends SubsystemBase {
 
-    private final SparkMax     feedmotor;
-    private final SparkFlex     shootermotor;
-    private final SparkFlex     shootermotor2;
-    private final SparkMax     hoodmotor;
+    private final SparkMax                  feedmotor;
+    private final SparkFlex                 shootermotor;
+    private final SparkFlex                 shootermotor2;
+    private final SparkMax                  hoodmotor;
     private final SparkClosedLoopController hoodController;
-    private final RelativeEncoder           hoodEncoder, shooterEncoder;
+    private final RelativeEncoder           hoodEncoder;
+    private final RelativeEncoder           shooterEncoder;
 
-    private double  shootspeed  = 4200;
-    private boolean shooterIsOn = false;
-    private boolean feedIsOn = false;
+    private double  shootspeed       = 3500;
+    public boolean shooterIsOn      = false;
+    private boolean feedIsOn         = false;
+    private boolean intakeFeedIsOn   = false;
 
     @SuppressWarnings("removal")
     public Shooter() {
-        SparkMax feed = null, hood = null;
+        SparkMax  feed   = null, hood   = null;
         SparkFlex shoot1 = null, shoot2 = null;
         try {
-            feed   = new SparkMax(Constants.shooter.feedmotor,    MotorType.kBrushless);
-            shoot1 = new SparkFlex(Constants.shooter.shootermotor, MotorType.kBrushless);
+            feed   = new SparkMax( Constants.shooter.feedmotor,     MotorType.kBrushless);
+            shoot1 = new SparkFlex(Constants.shooter.shootermotor,  MotorType.kBrushless);
             shoot2 = new SparkFlex(Constants.shooter.shootermotor2, MotorType.kBrushless);
-            hood   = new SparkMax(Constants.shooter.hoodmotor,    MotorType.kBrushless);
+            hood   = new SparkMax( Constants.shooter.hoodmotor,     MotorType.kBrushless);
         } catch (RuntimeException ex) {
             DriverStation.reportError("Error instantiating Shooter: " + ex.getMessage(), true);
         }
@@ -52,25 +53,31 @@ public class Shooter extends SubsystemBase {
         shootermotor2 = shoot2;
         hoodmotor     = hood;
 
-        // Shooter motor config
+        // --- Shooter wheels ---
         SparkFlexConfig shooterConfig = new SparkFlexConfig();
         shooterConfig.idleMode(IdleMode.kCoast);
+        shooterConfig.smartCurrentLimit(30);
+        shooterConfig.closedLoopRampRate(0.3);
         shooterConfig.closedLoop
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .pid(0.003, 0.0, 0.18);
         configureMotorFlex(shootermotor, shooterConfig, "shooter");
-        shooterEncoder = shootermotor.getEncoder();
+        shooterEncoder = (shootermotor != null) ? shootermotor.getEncoder() : null;
 
+        // --- Feed roller ---
         SparkMaxConfig feedConfig = new SparkMaxConfig();
         feedConfig.idleMode(IdleMode.kCoast);
-        configureMotor(feed, feedConfig, "feed");
-        // Follower motor config
+        configureMotor(feedmotor, feedConfig, "feed");
+
+        // --- Shooter follower ---
         SparkFlexConfig shooter2Config = new SparkFlexConfig();
         shooter2Config.idleMode(IdleMode.kCoast);
-        shooter2Config.follow(shootermotor, true);
+        shooter2Config.smartCurrentLimit(30);
+        shooter2Config.closedLoopRampRate(0.3);
+        if (shootermotor != null) shooter2Config.follow(shootermotor, true);
         configureMotorFlex(shootermotor2, shooter2Config, "shooter2");
 
-        // Hood motor config
+        // --- Hood ---
         SparkMaxConfig hoodConfig = new SparkMaxConfig();
         hoodConfig.encoder.positionConversionFactor(Constants.shooter.multiplier);
         hoodConfig.idleMode(IdleMode.kBrake);
@@ -85,93 +92,210 @@ public class Shooter extends SubsystemBase {
             .i(Constants.shooter.hoodi)
             .d(Constants.shooter.hoodd)
             .outputRange(-1, 1);
-        hoodConfig.smartCurrentLimit(40);
+        hoodConfig.smartCurrentLimit(30);
         configureMotor(hoodmotor, hoodConfig, "hood");
 
-        hoodController = hoodmotor.getClosedLoopController();
-        hoodEncoder    = hoodmotor.getEncoder();
-        hoodEncoder.setPosition(0);
-    }
-
-    /** Configure a motor and report any error. */
-    private void configureMotor(SparkMax motor, SparkMaxConfig config, String name) {
-        if (motor == null) return;
-        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-        if (err != REVLibError.kOk) {
-            DriverStation.reportError("Failed to configure " + name + " motor: " + err, true);
+        if (hoodmotor != null) {
+            hoodController = hoodmotor.getClosedLoopController();
+            hoodEncoder    = hoodmotor.getEncoder();
+            //hoodEncoder.setPosition(0);
+        } else {
+            hoodController = null;
+            hoodEncoder    = null;
         }
     }
+
+    private void configureMotor(SparkMax motor, SparkMaxConfig config, String name) {
+        if (motor == null) return;
+        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters,
+                                          PersistMode.kPersistParameters);
+        if (err != REVLibError.kOk)
+            DriverStation.reportError("Failed to configure " + name + " motor: " + err, true);
+    }
+
     private void configureMotorFlex(SparkFlex motor, SparkFlexConfig config, String name) {
         if (motor == null) return;
-        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-        if (err != REVLibError.kOk) {
+        REVLibError err = motor.configure(config, ResetMode.kResetSafeParameters,
+                                          PersistMode.kPersistParameters);
+        if (err != REVLibError.kOk)
             DriverStation.reportError("Failed to configure " + name + " motor: " + err, true);
-        }     
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    /** Push the current shootspeed to the closed-loop controller. */
+    private void applyShooterSetpoint() {
+        if (shootermotor != null)
+            shootermotor.getClosedLoopController()
+                        .setSetpoint(-shootspeed, ControlType.kVelocity);
+    }
+
+    // -------------------------------------------------------------------------
+    // Commands
+    // -------------------------------------------------------------------------
+
+    public Command adjustHoodup(){
+        return runOnce(() -> {
+            if (hoodController != null)
+                hoodController.setSetpoint(hoodController.getSetpoint()+1, ControlType.kPosition);
+        });
+    }
+
+    public Command adjustHooddown(){
+        return runOnce(() -> {
+            if (hoodController != null)
+                hoodController.setSetpoint(hoodController.getSetpoint()-1, ControlType.kPosition);
+        });
     }
 
     public Command moveHood(double position) {
-        return runOnce(() -> hoodController.setSetpoint(position, ControlType.kPosition));
+        return runOnce(() -> {
+            if (hoodController != null)
+                hoodController.setSetpoint(position, ControlType.kPosition);
+        });
     }
 
+    /** Push fuel to the shooter. Clears intake-feed state. */
     public Command FeedOn() {
-        return runOnce(() -> feedmotor.setVoltage(-6));
-    }
-
-    public Command IntakeFeed() {
-        return runOnce(() -> feedmotor.setVoltage(3));
+        return runOnce(() -> {
+            if (feedmotor != null) feedmotor.setVoltage(-6); 
+            feedIsOn       = true;
+            intakeFeedIsOn = false;
+        });
     }
 
     public Command FeedOff() {
-        return runOnce(() -> feedmotor.setVoltage(0.0));
+        return runOnce(() -> {
+            if (feedmotor != null) feedmotor.setVoltage(0.0);
+            feedIsOn = false;
+        });
     }
 
+    /** Run feed motor in reverse to assist intaking. Clears shooter-feed state. */
+    public Command IntakeFeed() {
+        return runOnce(() -> {
+            if (feedmotor != null) feedmotor.setVoltage(1.5);
+            intakeFeedIsOn = true;
+            feedIsOn       = false;
+        });
+    }
+
+    public Command IntakeFeedOff() {
+        return runOnce(() -> {
+            if (feedmotor != null) feedmotor.setVoltage(0.0);
+            intakeFeedIsOn = false;
+        });
+    }
+
+    /**
+     * Update shoot speed. If the shooter is already running, applies the new
+     * setpoint immediately so the wheels ramp without needing a toggle.
+     */
     public Command setShootSpeed(double setpoint) {
-        
-        if (shooterIsOn) {
-            return runOnce(() -> {shootspeed = setpoint; ShootOn();});    
-        }
-        return runOnce(() -> shootspeed = setpoint);
+        return runOnce(() -> {          // fix: was branching outside lambda
+            shootspeed = setpoint;
+            if (shooterIsOn) applyShooterSetpoint();
+        });
     }
 
     public Command ShootOn() {
-        return runOnce(() ->
-            shootermotor.getClosedLoopController().setSetpoint(-shootspeed, ControlType.kVelocity));
+        return runOnce(() -> {
+            applyShooterSetpoint();
+            shooterIsOn = true;
+        });
     }
 
     public Command ShootOff() {
-        return runOnce(() -> shootermotor.setVoltage(0.0));
+        return runOnce(() -> {
+            if (shootermotor != null) shootermotor.setVoltage(0.0);
+
+            shooterIsOn = false;
+        });
     }
 
-    /**
-     * Start the shooter: spin up wheels, wait briefly, then enable the feed roller.
-     * NOTE: Fixed broken chaining — commands inside runOnce() were being built but never scheduled.
-     */
+    /** Spin up wheels, wait for speed, then enable feed. */
     public Command ShooterOn() {
-        return ShootOn().andThen(new WaitCommand(0.2)).andThen(FeedOn());
+        return IntakeFeedOff()
+            .andThen(ShootOn())
+            .andThen(new WaitCommand(0.2))
+            .andThen(FeedOn());
     }
 
-    /**
-     * Stop the shooter: cut the feed, wait briefly, then spin down wheels.
-     */
+    /** Cut feed, wait briefly, then spin down wheels. */
     public Command ShooterOff() {
-        return FeedOff().andThen(new WaitCommand(0.2)).andThen(ShootOff());
+        return FeedOff()
+            .andThen(new WaitCommand(0.2))
+            .andThen(ShootOff());
     }
 
     /** Toggle shooter on/off. */
     public Command toggleShooter() {
-        shooterIsOn = !shooterIsOn;
-        return shooterIsOn ? ShooterOn() : ShooterOff();
+        return runOnce(() -> {          // fix: was branching outside lambda
+            if (shooterIsOn) {
+                if (shootermotor != null) shootermotor.setVoltage(0.0);
+                moveHood(0).schedule();
+                shooterIsOn = false;
+            } else {
+                applyShooterSetpoint();
+                shooterIsOn = true;
+            }
+        });
+    }
+/*
+     public Command toggleFeed() {
+        return runOnce(() -> {          // fix: was branching outside lambda
+            if (feedIsOn) {
+                FeedOff();
+            } else {
+                FeedOn();
+            }
+        });
+    }
+ */
+     public Command toggleFeed() {
+        return runOnce(() -> {
+            if (feedIsOn) {
+                if (feedmotor != null) feedmotor.setVoltage(0.0);
+                feedIsOn = false;
+            } else {
+                if (feedmotor != null) feedmotor.setVoltage(-7);
+                    feedIsOn       = true;
+                    intakeFeedIsOn = false;
+            }
+        });
     }
 
-     public Command toggleIntakeFeed() {
-        feedIsOn = !feedIsOn;
-        return feedIsOn ? IntakeFeed() : FeedOff();
+    /** Toggle between intake-feed and off. */
+    public Command toggleIntakeFeed() {
+        return runOnce(() -> {          // fix: was branching outside lambda
+            if (intakeFeedIsOn) {
+                if (feedmotor != null) feedmotor.setVoltage(0);
+                intakeFeedIsOn = false;
+            } else {
+                if (feedmotor != null) feedmotor.setVoltage(3);
+                intakeFeedIsOn = true;
+                feedIsOn       = false;
+            }
+        });
     }
+
+    
+
+    // -------------------------------------------------------------------------
+    // Telemetry
+    // -------------------------------------------------------------------------
 
     @Override
-  public void periodic()
-  {
-    SmartDashboard.putNumber("Hood",hoodEncoder.getPosition());
-    SmartDashboard.putNumber("Shooter Velocity",shooterEncoder.getVelocity());
-  }
+    public void periodic() {
+        if (hoodEncoder    != null) SmartDashboard.putNumber("Hood",             hoodEncoder.getPosition());
+        if (shooterEncoder != null) SmartDashboard.putNumber("Shooter Velocity", shooterEncoder.getVelocity());
+        SmartDashboard.putNumber("Shooter Voltage", shootermotor.getAppliedOutput()*shootermotor.getBusVoltage());
+        SmartDashboard.putNumber("Shooter1Temp", shootermotor.getMotorTemperature());
+        SmartDashboard.putNumber("Shooter2Temp", shootermotor2.getMotorTemperature());
+        SmartDashboard.putBoolean("Shooter-FeedIsOn",       feedIsOn);
+        SmartDashboard.putBoolean("Shooter-IntakeFeedIsOn", intakeFeedIsOn);
+        SmartDashboard.putBoolean("Shooter-ShooterIsOn",    shooterIsOn);
+    }
 }

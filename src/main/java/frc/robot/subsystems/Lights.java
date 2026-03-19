@@ -85,12 +85,7 @@ public class Lights extends SubsystemBase {
 
     public Command green_on() {
         return runOnce(() -> {
-            LEDPattern.gradient(GradientType.kDiscontinuous, Color.kRed, Color.kBlack);
-            color = "green";
-            lightson = true;
-            ledPattern = ledPattern.atBrightness(Percent.of(brightness));
-            scroll = false;
-            System.out.println(color + " turned ON");
+            ledPattern = LEDPattern.gradient(GradientType.kDiscontinuous, Color.kRed, Color.kBlack).atBrightness(Percent.of(brightness));
             ledPattern.applyTo(m_ledBuffer);
             m_led.setData(m_ledBuffer);
         });

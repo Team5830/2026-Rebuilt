@@ -2,10 +2,13 @@ package frc.robot.commands;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import frc.robot.Constants;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.SwerveSubsystem;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 
 /**
  * One-shot command that configures shooter speed and hood angle based on the
@@ -32,11 +35,16 @@ public final class Shoot extends Command {
         System.out.println("Set Shoot Speed: " + (distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC));
         System.out.println("moveHood: " + (distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC));
         // Configure speed and angle based on range, then toggle shooter + feed
-        m_shooter.setShootSpeed(distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC).schedule();   
+        if((m_shooter.shooterIsOn)){
+        new SequentialCommandGroup(m_intake.toggleFeedMode(), m_shooter.toggleFeed(), m_shooter.toggleShooter()).schedule();
+        }else{
+        m_shooter.setShootSpeed(distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC).schedule();
         m_shooter.moveHood(distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC).schedule();
-        m_shooter.toggleShooter().schedule();
-        m_intake.toggleFeed().schedule();
-    }
+        new SequentialCommandGroup(
+        m_shooter.toggleShooter(),
+        new WaitCommand(3.0),  new SequentialCommandGroup(m_shooter.toggleFeed(), new WaitCommand(0.5), m_intake.toggleFeedMode()) ).schedule();
+     }
+    }/* */
 
     @Override
     public boolean isFinished() {
