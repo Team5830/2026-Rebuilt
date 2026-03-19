@@ -5,6 +5,7 @@
 package frc.robot;
 
 import frc.robot.subsystems.*;
+import swervelib.SwerveInputStream;
 import frc.robot.Constants.intake;
 import frc.robot.commands.*;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -46,7 +47,8 @@ import com.pathplanner.lib.util.FlippingUtil;
  */
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
-  private SwerveSubsystem m_swerveDrive;
+  //private SwerveSubsystem m_swerve;
+  private SwerveSubsystem m_swerve;
   private Shooter m_Shooter =  new Shooter();
   //private Climber m_climber = new Climber(); 
   private Hopper m_hopper   = new Hopper();
@@ -61,15 +63,16 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    m_swerveDrive =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
+    
+    m_swerve =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
     try {
       joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
       xboxController = new CommandXboxController(Constants.controller.xboxPort2); // Creates an XboxController on port 2.
     } catch (RuntimeException ex) {
       DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
     }
-    NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
-    NamedCommands.registerCommand("ToggleShoot", new Shoot(m_Shooter, m_intake, m_swerveDrive));
+    NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerve, joystick1, m_Lights));
+    NamedCommands.registerCommand("ToggleShoot", new Shoot(m_Shooter, m_intake, m_swerve));
     NamedCommands.registerCommand("ToggleIntake", m_intake.toggleIntake());
     NamedCommands.registerCommand("ToggleHopper", m_hopper.toggleHopperCommand());
     driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
@@ -82,36 +85,33 @@ public class RobotContainer {
           DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
         }
 
-    driveChooser.onChange((selectedOption)->{
-      FieldOrientedDrive = selectedOption;
-      System.out.println("field drive value"+selectedOption);
-      if (FieldOrientedDrive){
-        driveCmd = m_swerveDrive.fieldDriveCommand(
-          () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND), // X
-          () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND), // Y 
-          () -> -joystick1.getRawAxis(4),                                                               // Angle 1
-          () -> -joystick1.getRawAxis(5)                                                              // Angle 2
-          );
-      }else {
-       driveCmd = m_swerveDrive.robotDriveCommand(
-          () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND), // X
-          () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND), // Y 
-          () -> -joystick1.getRawAxis(4),                                                               // Angle 1
-          () -> -joystick1.getRawAxis(5)                                                              // Angle 2
-          );
-        /*
-        driveCmd = m_swerveDrive.fieldDriveCommand( 
-        () -> MathUtil.applyDeadband(-joystick1.getRawAxis(1), Constants.controller.LEFT_Y_DEADBAND), // X
-        () -> MathUtil.applyDeadband(-joystick1.getRawAxis(0), Constants.controller.LEFT_X_DEADBAND), // Y 
-        () -> -joystick1.getRawAxis(4),                                                               // Angle 1
-        () -> -joystick1.getRawAxis(5)
-        ); */
-      }
-      
-      
-      
-    m_swerveDrive.setDefaultCommand(driveCmd);
-    });
+ 
+      SwerveInputStream driveAngularVelocity =
+        SwerveInputStream.of(
+                m_swerve.getSwerveDrive(), () -> -joystick1.getRawAxis(1), () -> -joystick1.getRawAxis(0))
+            .withControllerRotationAxis(() -> -joystick1.getRightX())
+            .deadband(Constants.controller.DEADBAND)
+            .scaleTranslation(0.95)
+            .allianceRelativeControl(true);
+
+       SwerveInputStream driveAngle = driveAngularVelocity.copy()
+            .withControllerHeadingAxis(() ->-joystick1.getRawAxis(4), () ->-joystick1.getRawAxis(5))
+            .headingWhile(true)
+            .deadband(Constants.controller.DEADBAND)
+            .scaleTranslation(0.95)
+            .allianceRelativeControl(true);
+
+      SwerveInputStream driveAngularVelocityKeyboard =
+      SwerveInputStream.of(
+              m_swerve.getSwerveDrive(), () -> -joystick1.getLeftY(), () -> -joystick1.getLeftX())
+          .withControllerRotationAxis(() -> joystick1.getRawAxis(2))
+          .deadband(Constants.controller.DEADBAND)
+          .scaleTranslation(0.95)
+          .allianceRelativeControl(true);
+
+      Command driveFieldOrientedAngle = m_swerve.driveFieldOriented(driveAngle);
+      m_swerve.setDefaultCommand(driveFieldOrientedAngle);
+      m_swerve.resetOdometry(new Pose2d(2,2,Rotation2d.kZero));
     // Autochooser must be setup after the named commands
     autoChooser = AutoBuilder.buildAutoChooser("Auto1");
     autoChooser.onChange((selectedOption) -> {
@@ -130,16 +130,16 @@ public class RobotContainer {
 
     SmartDashboard.putData("Auto Chooser", autoChooser);
     SmartDashboard.putData("Drive Chooser", driveChooser);
-    SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerveDrive, joystick1, m_Lights));
-    SmartDashboard.putData("drive",new AutoWaypoints(m_swerveDrive,  new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
+    SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerve, joystick1, m_Lights));
+    SmartDashboard.putData("drive",new AutoWaypoints(m_swerve,  new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     SmartDashboard.putData("Blue Lights",m_Lights.blue());
     SmartDashboard.putData("Lights off",m_Lights.off());
     SmartDashboard.putData("Red Lights",m_Lights.red());
     SmartDashboard.putData("Rainbow Lights",m_Lights.rainbow());
-    SmartDashboard.putData("Left",new AutoWaypoints(m_swerveDrive, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
-    SmartDashboard.putData("Up", new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
-    SmartDashboard.putData("Down",new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
-    SmartDashboard.putData("Right", new AutoWaypoints(m_swerveDrive, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
+    SmartDashboard.putData("Left",new AutoWaypoints(m_swerve, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
+    SmartDashboard.putData("Up", new AutoWaypoints(m_swerve, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
+    SmartDashboard.putData("Down",new AutoWaypoints(m_swerve, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
+    SmartDashboard.putData("Right", new AutoWaypoints(m_swerve, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
     SmartDashboard.putData("INTAKEtoggleIntake", m_intake.toggleIntake()); //new ParallelCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(), m_Lights.red()));
     SmartDashboard.putData("INTAKEtoggleFeed", m_intake.toggleFeedMode()); 
     SmartDashboard.putData("INTAKEtoggleIntake", m_intake.toggleIntake()); 
@@ -155,7 +155,7 @@ public class RobotContainer {
     SmartDashboard.putNumber("ShooterSpeed", 4200);
     SmartDashboard.putNumber("HoodAngle", 10);
     
-    SmartDashboard.putData("Test Shoot", new testShoot(m_Shooter, m_intake, m_swerveDrive));
+    SmartDashboard.putData("Test Shoot", new testShoot(m_Shooter, m_intake, m_swerve));
     //Warm up Path following commands
     FollowPathCommand.warmupCommand();
     // Configure the trigger bindings
@@ -173,29 +173,26 @@ public class RobotContainer {
    */
   private void configureBindings() {
     /* Driver Controls Port 1 */
-    joystick1.b().onTrue(new AimAtHub(m_swerveDrive, joystick1, m_Lights));
-    joystick1.back().onTrue( m_swerveDrive.ToggleBrake());
-    joystick1.povLeft().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
-    joystick1.povUp().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
-    joystick1.povDown().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
-    joystick1.povRight().onTrue(new AutoWaypoints(m_swerveDrive, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
-    joystick1.start().onTrue(new InstantCommand(m_swerveDrive::zeroGyro));
+    joystick1.b().onTrue(new AimAtHub(m_swerve, joystick1, m_Lights));
+    joystick1.back().onTrue( m_swerve.ToggleBrake());
+    joystick1.povLeft().onTrue(new AutoWaypoints(m_swerve, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
+    joystick1.povUp().onTrue(new AutoWaypoints(m_swerve, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
+    joystick1.povDown().onTrue(new AutoWaypoints(m_swerve, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
+    joystick1.povRight().onTrue(new AutoWaypoints(m_swerve, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
+    joystick1.start().onTrue(new InstantCommand(m_swerve::zeroGyro));
     
     /*Co-driver controls  Port 2 */
     //xboxController.povUp().onTrue( m_climber.Up());
     //xboxController.povDown().onTrue(m_climber.Down());
-    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(), m_Lights.red()));
+    //xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(), m_Lights.red()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
-    xboxController.leftTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerveDrive));
+    xboxController.leftTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerve));
     xboxController.x().onTrue(m_Lights.pink());
     xboxController.povUp().onTrue(m_Shooter.adjustHoodup());
     xboxController.povDown().onTrue(m_Shooter.adjustHooddown());
     xboxController.b().onTrue(m_intake.toggleReverseIntake());
     }
-    public void zeroTeleopFieldOrientation(){
-      m_swerveDrive.zeroTeleopFieldOrientation();
-    }
-
+    
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
    *
@@ -205,9 +202,6 @@ public class RobotContainer {
   public Command getAutonomousCommand() {
 
     Command selected = autoChooser.getSelected();
-    //String autoName = autoChooser.getSelected().getName();
-    //PathPlannerAuto AutoPath = new PathPlannerAuto(autoName);
-    //m_swerveDrive.resetOdometry(AutoPath.getStartingPose());
     return selected;
     
   }
