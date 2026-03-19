@@ -66,6 +66,7 @@ public class SwerveSubsystem extends SubsystemBase {
     private double maxChassisAngularVelocity;
     public PathConstraints constraints;
     private AprilTagFieldLayout aprilTagFieldLayout;
+    private static final double HUB_OFFSET_M = 24 * 2.54 / 100.0;
 
     public SwerveSubsystem(File directory){
         /*Configure the telemetry before creating the swerve to avoid clutter.*/
@@ -340,10 +341,22 @@ public DriverStation.Alliance getAlliance() {
 
 /** Get distance to the hub (alliance-aware). */
   public double DistancetoHub() {
+    
     // Select hub tag by alliance
-    int targetTag = (alliance == Alliance.Blue) ? 10 : 26;
-    return getDistanceToTag(targetTag);
+    int targetTag = (getAlliance() == Alliance.Blue) ? 26 : 10;
+    Pose2d tagpose  = GetTagPose(targetTag);
+    // Offset toward hub behind tag
+    //boolean red = swerve.getAlliance() == DriverStation.Alliance.Red;
+    double offsetX  = (getAlliance() == Alliance.Red) ? -HUB_OFFSET_M : HUB_OFFSET_M;
+    Pose2d hubpose  = new Pose2d(tagpose.getX() + offsetX, tagpose.getY(), tagpose.getRotation());
+    Pose2d robot    = getPose();
+    double ydif = (hubpose.getY() - robot.getY());
+    double xdif = hubpose.getX() - robot.getX();
+    return Math.sqrt(xdif*xdif + ydif*ydif);
+
   }
+
+  
 
   public double getDistanceToTag(int id) {
     return vision.getDistanceFromAprilTag(id);

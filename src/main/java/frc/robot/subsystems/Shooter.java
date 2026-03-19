@@ -14,9 +14,11 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
+import edu.wpi.first.math.filter.MedianFilter;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants;
@@ -35,6 +37,9 @@ public class Shooter extends SubsystemBase {
     public boolean shooterIsOn      = false;
     private boolean feedIsOn         = false;
     private boolean intakeFeedIsOn   = false;
+    private MedianFilter ave_filt = new MedianFilter(50);
+    private MedianFilter shooter_cur_filt = new MedianFilter(5);
+    private MedianFilter feeder_cur_filt = new MedianFilter(5);
 
     @SuppressWarnings("removal")
     public Shooter() {
@@ -173,6 +178,30 @@ public class Shooter extends SubsystemBase {
         });
     }
 
+    public boolean monitorShooter(){
+        double cur_cur = shootermotor.getOutputCurrent();
+        double ave_cur = shooter_cur_filt.calculate(cur_cur);
+        if (ave_cur*1.05 < cur_cur){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public boolean monitorFeed(){
+        double cur_cur = feedmotor.getOutputCurrent();
+        double ave_cur = feeder_cur_filt.calculate(cur_cur);
+        if (ave_cur*1.05 < cur_cur){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public Command IndexFeed(){
+       return IntakeFeed().onlyWhile(()->(!monitorFeed() && !monitorShooter())).andThen(IntakeFeedOff());
+    }
+
     /** Run feed motor in reverse to assist intaking. Clears shooter-feed state. */
     public Command IntakeFeed() {
         return runOnce(() -> {
@@ -198,6 +227,16 @@ public class Shooter extends SubsystemBase {
             shootspeed = setpoint;
             if (shooterIsOn) applyShooterSetpoint();
         });
+    }
+
+    public double getShooterSpeed(){
+        return shooterEncoder.getVelocity();
+    }
+
+    public boolean shooterAtTargetSpeed(){
+        if (shooterEncoder.getVelocity() - shootspeed < shootspeed * 0.1){
+            return true;
+        }else{ return false;}
     }
 
     public Command ShootOn() {
@@ -291,11 +330,15 @@ public class Shooter extends SubsystemBase {
     public void periodic() {
         if (hoodEncoder    != null) SmartDashboard.putNumber("Hood",             hoodEncoder.getPosition());
         if (shooterEncoder != null) SmartDashboard.putNumber("Shooter Velocity", shooterEncoder.getVelocity());
-        SmartDashboard.putNumber("Shooter Voltage", shootermotor.getAppliedOutput()*shootermotor.getBusVoltage());
+        SmartDashboard.putNumber("Shooter Voltage", ave_filt.calculate(shootermotor.getAppliedOutput()*shootermotor.getBusVoltage()));
         SmartDashboard.putNumber("Shooter1Temp", shootermotor.getMotorTemperature());
         SmartDashboard.putNumber("Shooter2Temp", shootermotor2.getMotorTemperature());
         SmartDashboard.putBoolean("Shooter-FeedIsOn",       feedIsOn);
         SmartDashboard.putBoolean("Shooter-IntakeFeedIsOn", intakeFeedIsOn);
         SmartDashboard.putBoolean("Shooter-ShooterIsOn",    shooterIsOn);
+        SmartDashboard.putBoolean("Shot Fuel", monitorShooter());
+        SmartDashboard.putBoolean("Feed Fuel", monitorFeed());
+        SmartDashboard.putNumber("ShooterCurrent", shootermotor.getOutputCurrent());
+        SmartDashboard.putNumber("FeederCurrent", feedmotor.getOutputCurrent());
     }
 }

@@ -2,6 +2,7 @@ package frc.robot.commands;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.Constants;
@@ -42,19 +43,15 @@ public final class testShoot extends Command {
         m_shooter.setShootSpeed(shooterspeed).schedule();
         m_shooter.moveHood(hoodangle).schedule();
         m_shooter.toggleShooter().schedule();
-        new WaitCommand(2.0).andThen(m_shooter.toggleFeed()).andThen(m_intake.toggleFeedMode()).schedule();
-        //m_shooter.toggleFeed().schedule();
-        //m_intake.toggleFeedMode().schedule();
-        /* 
-        new ParallelCommandGroup(m_shooter.setShootSpeed(shooterspeed), 
-            m_shooter.moveHood(hoodangle), 
-            m_shooter.toggleShooter()
-            ).andThen(
-                new WaitCommand(3.0)
-            ).andThen( new ParallelCommandGroup(   
-                 m_shooter.toggleFeed(),  
-                 m_intake.toggleFeedMode() )
-            ).schedule();*/
+        
+    }
+
+    @Override
+    public void execute(){
+        m_intake.toggleFeedMode().schedule();
+        new ConditionalCommand(m_shooter.FeedOn(), m_shooter.FeedOff(), m_shooter::shooterAtTargetSpeed ).repeatedly().schedule();
+        //m_shooter.toggleFeed().onlyWhile(() ->m_shooter.getShooterSpeed()-shooterspeed < 100).repeatedly().schedule();
+        
     }
 
     @Override

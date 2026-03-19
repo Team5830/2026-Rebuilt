@@ -4,39 +4,36 @@
 
 package frc.robot;
 
-import frc.robot.subsystems.*;
-import swervelib.SwerveInputStream;
-import frc.robot.Constants.intake;
-import frc.robot.commands.*;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.io.File;
 import java.util.List;
-
-import javax.imageio.plugins.tiff.GeoTIFFTagSet;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathPlannerPath;
-import com.pathplanner.lib.trajectory.PathPlannerTrajectory;
-import com.pathplanner.lib.util.FlippingUtil;
+
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.commands.Aim;
+import frc.robot.commands.AimAtHub;
+import frc.robot.commands.AutoWaypoints;
+import frc.robot.commands.Shoot;
+import frc.robot.commands.testShoot;
+import frc.robot.subsystems.Hopper;
+import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Lights;
+import frc.robot.subsystems.Shooter;
+import frc.robot.subsystems.SwerveSubsystem;
+import swervelib.SwerveInputStream;
 
 
 /**
@@ -57,13 +54,14 @@ public class RobotContainer {
   Command driveCmd = null;
 
   private CommandXboxController joystick1, xboxController;
+  SwerveInputStream driveAngle;
   final SendableChooser<Command> autoChooser;
   final SendableChooser<Boolean> driveChooser= new SendableChooser<>();
   boolean FieldOrientedDrive = false;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    
+
     m_swerve =  new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
     try {
       joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
@@ -78,28 +76,21 @@ public class RobotContainer {
     driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
     driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
 
-    try {
-          joystick1 = new CommandXboxController(Constants.controller.xboxPort1);
-          xboxController = new CommandXboxController(Constants.controller.xboxPort2); // Creates an XboxController on port 2.
-        } catch (RuntimeException ex) {
-          DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
-        }
-
  
-      SwerveInputStream driveAngularVelocity =
-        SwerveInputStream.of(
-                m_swerve.getSwerveDrive(), () -> -joystick1.getRawAxis(1), () -> -joystick1.getRawAxis(0))
-            .withControllerRotationAxis(() -> -joystick1.getRightX())
-            .deadband(Constants.controller.DEADBAND)
-            .scaleTranslation(0.95)
-            .allianceRelativeControl(true);
+    SwerveInputStream driveAngularVelocity =
+      SwerveInputStream.of(
+              m_swerve.getSwerveDrive(), () -> -joystick1.getRawAxis(1), () -> -joystick1.getRawAxis(0))
+          .withControllerRotationAxis(() -> -joystick1.getRightX())
+          .deadband(Constants.controller.DEADBAND)
+          .scaleTranslation(0.95)
+          .allianceRelativeControl(true);
 
-       SwerveInputStream driveAngle = driveAngularVelocity.copy()
-            .withControllerHeadingAxis(() ->-joystick1.getRawAxis(4), () ->-joystick1.getRawAxis(5))
-            .headingWhile(true)
-            .deadband(Constants.controller.DEADBAND)
-            .scaleTranslation(0.95)
-            .allianceRelativeControl(true);
+      driveAngle = driveAngularVelocity.copy()
+          .withControllerHeadingAxis(() ->joystick1.getRawAxis(4)*(m_swerve.isRedAlliance()?1:-1), () ->joystick1.getRawAxis(5)*(m_swerve.isRedAlliance()?1:-1))
+          .headingWhile(true)
+          .deadband(Constants.controller.DEADBAND)
+          .scaleTranslation(0.95)
+          .allianceRelativeControl(true);
 
       SwerveInputStream driveAngularVelocityKeyboard =
       SwerveInputStream.of(
@@ -127,6 +118,7 @@ public class RobotContainer {
       // Perform actions based on the selected option
       });
 
+    
 
     SmartDashboard.putData("Auto Chooser", autoChooser);
     SmartDashboard.putData("Drive Chooser", driveChooser);
@@ -173,7 +165,7 @@ public class RobotContainer {
    */
   private void configureBindings() {
     /* Driver Controls Port 1 */
-    joystick1.b().onTrue(new AimAtHub(m_swerve, joystick1, m_Lights));
+    joystick1.b().onTrue(new Aim(m_swerve, driveAngle, m_Lights, joystick1));
     joystick1.back().onTrue( m_swerve.ToggleBrake());
     joystick1.povLeft().onTrue(new AutoWaypoints(m_swerve, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     joystick1.povUp().onTrue(new AutoWaypoints(m_swerve, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));

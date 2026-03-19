@@ -61,6 +61,14 @@ public class Lights extends SubsystemBase {
             LEDPattern.gradient(GradientType.kDiscontinuous, Color.kGreen, Color.kBlack), false));
     }
 
+     public Command red_on() {
+        return runOnce(() -> {
+            ledPattern = LEDPattern.gradient(GradientType.kDiscontinuous, Color.kGreen, Color.kBlack).atBrightness(Percent.of(brightness));
+            ledPattern.applyTo(m_ledBuffer);
+            m_led.setData(m_ledBuffer);
+        });
+    }
+
     public Command off() {
         return runOnce(() -> {
             color = "off";
