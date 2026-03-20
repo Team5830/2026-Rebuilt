@@ -65,7 +65,7 @@ public class Shooter extends SubsystemBase {
         shooterConfig.closedLoopRampRate(0.3);
         shooterConfig.closedLoop
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-            .pid(0.003, 0.0, 0.18);
+            .pid(0.003, 0.0, 0.18).feedForward.kV(0.0019);
         configureMotorFlex(shootermotor, shooterConfig, "shooter");
         shooterEncoder = (shootermotor != null) ? shootermotor.getEncoder() : null;
 
@@ -181,7 +181,7 @@ public class Shooter extends SubsystemBase {
     public boolean monitorShooter(){
         double cur_cur = shootermotor.getOutputCurrent();
         double ave_cur = shooter_cur_filt.calculate(cur_cur);
-        if (ave_cur*1.05 < cur_cur){
+        if (ave_cur*1.10 < cur_cur){
             return true;
         }else{
             return false;
@@ -191,7 +191,7 @@ public class Shooter extends SubsystemBase {
     public boolean monitorFeed(){
         double cur_cur = feedmotor.getOutputCurrent();
         double ave_cur = feeder_cur_filt.calculate(cur_cur);
-        if (ave_cur*1.05 < cur_cur){
+        if (ave_cur*1.10 < cur_cur){
             return true;
         }else{
             return false;
