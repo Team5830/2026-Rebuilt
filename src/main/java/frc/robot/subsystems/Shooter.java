@@ -234,7 +234,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public boolean shooterAtTargetSpeed(){
-        if (shooterEncoder.getVelocity() - shootspeed < shootspeed * 0.1){
+        if (Math.abs(shooterEncoder.getVelocity()) >= Math.abs(shootspeed * 0.9)){
             return true;
         }else{ return false;}
     }
