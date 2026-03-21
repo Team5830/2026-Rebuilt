@@ -109,6 +109,8 @@ public class RobotContainer {
         m_swerve.setDefaultCommand(driveRobotOriented);
       }
     });
+    Command driveFieldOrientedAngle = m_swerve.driveFieldOriented(driveAngle);
+        m_swerve.setDefaultCommand(driveFieldOrientedAngle);
     // Autochooser must be setup after the named commands
     autoChooser = AutoBuilder.buildAutoChooser("Auto1");
     autoChooser.onChange((selectedOption) -> {

@@ -49,7 +49,8 @@ public final class Shoot extends Command {
                 new WaitUntilCommand(m_shooter::shooterAtTargetSpeed).withTimeout(5.0),
                 m_shooter.FeedOn(),
                 new WaitCommand(0.5),
-                m_intake.FeedOn()
+                m_intake.FeedOn(),
+                m_shooter.KeysToTheKingdomtoggle()
             ).schedule();
 
             //m_shooter.FeedOn().
