@@ -62,6 +62,12 @@
       "waypointRelativePos": 0.8010862186014949,
       "endWaypointRelativePos": null,
       "command": null
+    },
+    {
+      "name": "TurnToTarget",
+      "waypointRelativePos": 1.8688811188811218,
+      "endWaypointRelativePos": null,
+      "command": null
     }
   ],
   "globalConstraints": {
@@ -74,13 +80,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -35.8642928591414
+    "rotation": -87.0696280851947
   },
   "reversed": false,
   "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -0.5456315785981498
+    "rotation": -0.5456315785981499
   },
   "useDefaultConstraints": true
 }

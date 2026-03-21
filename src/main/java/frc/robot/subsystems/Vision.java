@@ -159,6 +159,7 @@ public class Vision
     }
     for (Cameras camera : Cameras.values())
     {
+      camera.updateUnreadResults();
       Optional<EstimatedRobotPose> poseEst = getEstimatedGlobalPose(camera);
       if (Robot.isSimulation()) {
         poseEst.ifPresentOrElse(

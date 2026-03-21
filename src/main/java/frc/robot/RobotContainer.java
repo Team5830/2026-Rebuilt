@@ -20,12 +20,13 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.Aim;
-import frc.robot.commands.AimAtHub;
 import frc.robot.commands.AutoWaypoints;
+import frc.robot.commands.FireOne;
 import frc.robot.commands.Shoot;
 import frc.robot.commands.testShoot;
 import frc.robot.subsystems.Hopper;
@@ -69,14 +70,10 @@ public class RobotContainer {
     } catch (RuntimeException ex) {
       DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
     }
-    NamedCommands.registerCommand("TurnToTarget", new AimAtHub(m_swerve, joystick1, m_Lights));
+    NamedCommands.registerCommand("TurnToTarget", new  Aim(m_swerve, driveAngle, m_Lights, joystick1));
     NamedCommands.registerCommand("ToggleShoot", new Shoot(m_Shooter, m_intake, m_swerve));
     NamedCommands.registerCommand("ToggleIntake", m_intake.toggleIntake());
     NamedCommands.registerCommand("ToggleHopper", m_hopper.toggleHopperCommand());
-    driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
-    driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
-
- 
     SwerveInputStream driveAngularVelocity =
       SwerveInputStream.of(
               m_swerve.getSwerveDrive(), () -> -joystick1.getRawAxis(1), () -> -joystick1.getRawAxis(0))
@@ -99,30 +96,48 @@ public class RobotContainer {
           .deadband(Constants.controller.DEADBAND)
           .scaleTranslation(0.95)
           .allianceRelativeControl(true);
-
-      Command driveFieldOrientedAngle = m_swerve.driveFieldOriented(driveAngle);
-      m_swerve.setDefaultCommand(driveFieldOrientedAngle);
-      m_swerve.resetOdometry(new Pose2d(2,2,Rotation2d.kZero));
+    driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
+    driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
+    driveChooser.onChange((selectedOption)->{
+      FieldOrientedDrive = selectedOption;
+      System.out.println("field drive value"+selectedOption);
+      if (FieldOrientedDrive){
+        Command driveFieldOrientedAngle = m_swerve.driveFieldOriented(driveAngle);
+        m_swerve.setDefaultCommand(driveFieldOrientedAngle);
+      }else {
+        Command driveRobotOriented = m_swerve.driveRobotOriented(driveAngularVelocity);
+        m_swerve.setDefaultCommand(driveRobotOriented);
+      }
+    });
     // Autochooser must be setup after the named commands
     autoChooser = AutoBuilder.buildAutoChooser("Auto1");
     autoChooser.onChange((selectedOption) -> {
       // This code will be executed whenever the selected option changes
       PathPlannerAuto AutoPath = new PathPlannerAuto(selectedOption);
       List<PathPlannerPath> pathsInAuto = null;
+      
       try{
         pathsInAuto = PathPlannerAuto.getPathGroupFromAutoFile(selectedOption.getName());
       }catch( Exception ex){ 
         System.out.println("Failed to parse autopath"+selectedOption.getName());
-
       }  
+      if (pathsInAuto == null){
+        return;
+      }
       // Perform actions based on the selected option
-      });
+      Pose2d startingPose = new Pose2d(0,0,Rotation2d.kZero);
+      if (!pathsInAuto.isEmpty()) {
+        PathPlannerPath path0 = pathsInAuto.get(0);
+        startingPose = new Pose2d(path0.getPoint(0).position, path0.getIdealStartingState().rotation());
+      }
+      m_swerve.resetOdometry(startingPose);
+    });
 
     
 
     SmartDashboard.putData("Auto Chooser", autoChooser);
     SmartDashboard.putData("Drive Chooser", driveChooser);
-    SmartDashboard.putData("Turn To Hub", new AimAtHub(m_swerve, joystick1, m_Lights));
+    SmartDashboard.putData("Turn To Hub", new  Aim(m_swerve, driveAngle, m_Lights, joystick1));
     SmartDashboard.putData("drive",new AutoWaypoints(m_swerve,  new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     SmartDashboard.putData("Blue Lights",m_Lights.blue());
     SmartDashboard.putData("Lights off",m_Lights.off());
@@ -148,6 +163,9 @@ public class RobotContainer {
     SmartDashboard.putNumber("HoodAngle", 10);
     
     SmartDashboard.putData("Test Shoot", new testShoot(m_Shooter, m_intake, m_swerve));
+    SmartDashboard.putData("FireOneRepeat", new FireOne(m_Shooter).repeatedly());
+    SmartDashboard.putData("FireOne", new FireOne(m_Shooter));
+    SmartDashboard.putData("Cancel Shooter", Commands.runOnce(() -> {}, m_Shooter));
     //Warm up Path following commands
     FollowPathCommand.warmupCommand();
     // Configure the trigger bindings

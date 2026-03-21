@@ -6,7 +6,6 @@ import frc.robot.subsystems.SwerveSubsystem;
 import swervelib.SwerveInputStream;
 import edu.wpi.first.wpilibj2.command.Command;
 
-import com.ctre.phoenix6.swerve.SwerveModuleConstants.DriveMotorArrangement;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -49,7 +48,10 @@ public final class Aim extends Command {
         boolean red = swerve.getAlliance() == DriverStation.Alliance.Red;
         double offsetX  = red ? -HUB_OFFSET_M : HUB_OFFSET_M;
         Pose2d hubpose  = new Pose2d(tagPose.getX() + offsetX, tagPose.getY(), tagPose.getRotation());
-        aimcmd = swerve.driveFieldOriented(driveInput.aim(hubpose).headingWhile(true).aimWhile(()->Math.hypot(joystick.getRawAxis(4), joystick.getRawAxis(5)) < 0.1));
+        Pose2d robot = swerve.getPose();
+        targetAngleDegrees = Math.toDegrees(
+        Math.atan2(hubpose.getY() - robot.getY(), hubpose.getX() - robot.getX()));
+        aimcmd = swerve.driveFieldOriented(driveInput.aim(hubpose).headingWhile(true).aimWhile(()->Math.hypot(joystick.getRawAxis(4), joystick.getRawAxis(5)) > 0.1));
         aimcmd.initialize();
     }
 

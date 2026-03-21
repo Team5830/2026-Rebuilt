@@ -14,6 +14,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.filter.MedianFilter;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -38,6 +39,8 @@ public class Shooter extends SubsystemBase {
     private boolean feedIsOn         = false;
     private boolean intakeFeedIsOn   = false;
     private MedianFilter ave_filt = new MedianFilter(50);
+    private final LinearFilter shooterBaselineFilter = LinearFilter.movingAverage(75); // ~1.5s window
+    private boolean lastShotDetected = false;
     private MedianFilter shooter_cur_filt = new MedianFilter(5);
     private MedianFilter feeder_cur_filt = new MedianFilter(5);
 
@@ -178,14 +181,19 @@ public class Shooter extends SubsystemBase {
         });
     }
 
-    public boolean monitorShooter(){
-        double cur_cur = shootermotor.getOutputCurrent();
-        double ave_cur = shooter_cur_filt.calculate(cur_cur);
-        if (ave_cur*1.10 < cur_cur){
-            return true;
-        }else{
-            return false;
-        }
+    public boolean shotDetected() {
+        if (shootermotor == null || !shooterIsOn) return false;
+        
+        double current = shootermotor.getOutputCurrent();
+        double baseline = shooterBaselineFilter.calculate(current);
+        
+        // Detect a spike of 40% above the rolling baseline
+        boolean spike = current > 5 && current > baseline * 1.4;
+        
+        // Edge detection — only true on the rising edge, not the whole duration
+        boolean risingEdge = spike && !lastShotDetected;
+        lastShotDetected = spike;
+        return risingEdge;
     }
 
     public boolean monitorFeed(){
@@ -199,7 +207,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command IndexFeed(){
-       return IntakeFeed().onlyWhile(()->(!monitorFeed() && !monitorShooter())).andThen(IntakeFeedOff());
+       return IntakeFeed().onlyWhile(()->(!monitorFeed() && !shotDetected())).andThen(IntakeFeedOff());
     }
 
     /** Run feed motor in reverse to assist intaking. Clears shooter-feed state. */
@@ -254,14 +262,6 @@ public class Shooter extends SubsystemBase {
         });
     }
 
-    /** Spin up wheels, wait for speed, then enable feed. */
-    public Command ShooterOn() {
-        return IntakeFeedOff()
-            .andThen(ShootOn())
-            .andThen(new WaitCommand(0.2))
-            .andThen(FeedOn());
-    }
-
     /** Cut feed, wait briefly, then spin down wheels. */
     public Command ShooterOff() {
         return FeedOff()
@@ -282,17 +282,7 @@ public class Shooter extends SubsystemBase {
             }
         });
     }
-/*
-     public Command toggleFeed() {
-        return runOnce(() -> {          // fix: was branching outside lambda
-            if (feedIsOn) {
-                FeedOff();
-            } else {
-                FeedOn();
-            }
-        });
-    }
- */
+
      public Command toggleFeed() {
         return runOnce(() -> {
             if (feedIsOn) {
@@ -336,7 +326,7 @@ public class Shooter extends SubsystemBase {
         SmartDashboard.putBoolean("Shooter-FeedIsOn",       feedIsOn);
         SmartDashboard.putBoolean("Shooter-IntakeFeedIsOn", intakeFeedIsOn);
         SmartDashboard.putBoolean("Shooter-ShooterIsOn",    shooterIsOn);
-        SmartDashboard.putBoolean("Shot Fuel", monitorShooter());
+        SmartDashboard.putBoolean("Shot Fuel", shotDetected());
         SmartDashboard.putBoolean("Feed Fuel", monitorFeed());
         SmartDashboard.putNumber("ShooterCurrent", shootermotor.getOutputCurrent());
         SmartDashboard.putNumber("FeederCurrent", feedmotor.getOutputCurrent());
