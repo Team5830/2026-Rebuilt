@@ -36,7 +36,7 @@ public class Shooter extends SubsystemBase {
     private final SparkClosedLoopController hoodController;
     private final RelativeEncoder           hoodEncoder;
     private final RelativeEncoder           shooterEncoder;
-    private final RelativeEncoder           St_PeterEncoder;
+    //private final RelativeEncoder           St_PeterEncoder;
     private final SparkMax                  St_PetersMotor;
 
     private double  shootspeed       = 3500;
@@ -78,7 +78,7 @@ public class Shooter extends SubsystemBase {
         shooterConfig.closedLoopRampRate(0.3);
         shooterConfig.closedLoop
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-            .pid(0.003, 0.0, 0.18);//.feedForward.kV(0.0019);
+            .pid(0.003, 0.0, 0.18).feedForward.kV(0.0002);
         configureMotorFlex(shootermotor, shooterConfig, "shooter");
         shooterEncoder = (shootermotor != null) ? shootermotor.getEncoder() : null;
 
@@ -91,7 +91,7 @@ public class Shooter extends SubsystemBase {
         SparkMaxConfig StPeterConfig = new SparkMaxConfig();
         StPeterConfig.idleMode(IdleMode.kCoast);
         configureMotor(St_PetersMotor, StPeterConfig, "St Peter");
-        St_PeterEncoder = (St_PetersMotor != null) ? St_PetersMotor.getEncoder() : null;
+        //St_PeterEncoder = (St_PetersMotor != null) ? St_PetersMotor.getEncoder() : null;
 
         // --- Shooter follower ---
         SparkFlexConfig shooter2Config = new SparkFlexConfig();
@@ -244,7 +244,7 @@ public class Shooter extends SubsystemBase {
 
     public Command GateOpen() {
         return runOnce(() -> {
-            if (St_PetersMotor != null) St_PetersMotor.setVoltage(4);
+            if (St_PetersMotor != null) St_PetersMotor.setVoltage(7);
             GateOpen = true;
         });
     }
@@ -257,7 +257,15 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command KeysToTheKingdomtoggle(){
-        return new SequentialCommandGroup(new WaitUntilCommand(()->shooterAtTargetSpeed()), GateOpen(), new WaitCommand(0.4), GateClosed().repeatedly().until(()->shooterIsOn));
+        return new SequentialCommandGroup(new WaitUntilCommand(()->shooterAtTargetSpeed()), 
+                                            new WaitCommand(1), 
+                                            GateOpen(), 
+                                            new WaitCommand(1), 
+                                            GateClosed().repeatedly().until(()->shooterIsOn = false));
+    }
+
+      public Command KeysToTheKingdomtest(){
+        return new SequentialCommandGroup(GateOpen(), new WaitCommand(0.4), GateClosed().repeatedly().until(()->shooterIsOn = false));
     }
 
 

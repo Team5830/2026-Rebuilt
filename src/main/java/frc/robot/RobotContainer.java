@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.Aim;
@@ -165,6 +166,7 @@ public class RobotContainer {
     SmartDashboard.putNumber("HoodAngle", 10);
     
     SmartDashboard.putData("Test Shoot", new testShoot(m_Shooter, m_intake, m_swerve));
+    SmartDashboard.putData("Keys Test", m_Shooter.KeysToTheKingdomtest());
     SmartDashboard.putData("FireOneRepeat", new FireOne(m_Shooter).repeatedly());
     SmartDashboard.putData("FireOne", new FireOne(m_Shooter));
     SmartDashboard.putData("Cancel Shooter", Commands.runOnce(() -> {}, m_Shooter));
@@ -194,9 +196,9 @@ public class RobotContainer {
     joystick1.start().onTrue(new InstantCommand(m_swerve::zeroGyro));
     
     /*Co-driver controls  Port 2 */
-    //xboxController.povUp().onTrue( m_climber.Up());
-    //xboxController.povDown().onTrue(m_climber.Down());
-    //xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(), m_Lights.red()));
+    // xboxController.povUp().onTrue( m_climber.Up());
+    // xboxController.povDown().onTrue(m_climber.Down());
+    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(), m_Lights.red()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
     xboxController.leftTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerve));
     xboxController.x().onTrue(m_Lights.pink());
