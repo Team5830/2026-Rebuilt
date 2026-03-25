@@ -26,7 +26,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.Aim;
 import frc.robot.commands.AutoWaypoints;
-import frc.robot.commands.FireOne;
+import frc.robot.commands.FireOnce;
 import frc.robot.commands.Shoot;
 import frc.robot.commands.testShoot;
 import frc.robot.subsystems.Hopper;
@@ -163,8 +163,8 @@ public class RobotContainer {
     SmartDashboard.putNumber("HoodAngle", 10);
     
     SmartDashboard.putData("Test Shoot", new testShoot(m_Shooter, m_intake, m_swerve));
-    SmartDashboard.putData("FireOneRepeat", new FireOne(m_Shooter).repeatedly());
-    SmartDashboard.putData("FireOne", new FireOne(m_Shooter));
+    //SmartDashboard.putData("FireOneRepeat", new FireOnce(m_Shooter, m_intake, m_swerve).repeatedly());
+    SmartDashboard.putData("FireOne", new FireOnce(m_Shooter, m_intake, m_swerve));
     SmartDashboard.putData("Cancel Shooter", Commands.runOnce(() -> {}, m_Shooter));
     //Warm up Path following commands
     FollowPathCommand.warmupCommand();

@@ -39,10 +39,16 @@ public class Shooter extends SubsystemBase {
     private boolean feedIsOn         = false;
     private boolean intakeFeedIsOn   = false;
     private MedianFilter ave_filt = new MedianFilter(50);
-    private final LinearFilter shooterBaselineFilter = LinearFilter.movingAverage(75); // ~1.5s window
-    private boolean lastShotDetected = false;
     private MedianFilter shooter_cur_filt = new MedianFilter(5);
     private MedianFilter feeder_cur_filt = new MedianFilter(5);
+    private final LinearFilter shooterBaselineFilter = LinearFilter.movingAverage(75);
+    private boolean lastShotDetected = false;
+
+    // Cached PID values — used to detect dashboard changes each loop
+    private double tuneP  = 0.003;
+    private double tuneI  = 0.0;
+    private double tuneD  = 0.18;
+    private double tuneKV = 0.0019;
 
     @SuppressWarnings("removal")
     public Shooter() {
@@ -111,6 +117,12 @@ public class Shooter extends SubsystemBase {
             hoodController = null;
             hoodEncoder    = null;
         }
+
+        // Publish initial PID values so they appear in SmartDashboard/Shuffleboard
+        SmartDashboard.putNumber("Shooter-P",  tuneP);
+        SmartDashboard.putNumber("Shooter-I",  tuneI);
+        SmartDashboard.putNumber("Shooter-D",  tuneD);
+        SmartDashboard.putNumber("Shooter-kV", tuneKV);
     }
 
     private void configureMotor(SparkMax motor, SparkMaxConfig config, String name) {
@@ -127,6 +139,38 @@ public class Shooter extends SubsystemBase {
                                           PersistMode.kPersistParameters);
         if (err != REVLibError.kOk)
             DriverStation.reportError("Failed to configure " + name + " motor: " + err, true);
+    }
+
+    /**
+     * Checks SmartDashboard for PID changes and pushes them to the motor
+     * controller live if any value has changed. Called from periodic().
+     * Uses kNoPersist so values are not written to flash on every loop.
+     */
+    private void applyPIDFromDashboard() {
+        if (shootermotor == null) return;
+        double p  = SmartDashboard.getNumber("Shooter-P",  tuneP);
+        double i  = SmartDashboard.getNumber("Shooter-I",  tuneI);
+        double d  = SmartDashboard.getNumber("Shooter-D",  tuneD);
+        double kv = SmartDashboard.getNumber("Shooter-kV", tuneKV);
+
+        if (p != tuneP || i != tuneI || d != tuneD || kv != tuneKV) {
+            tuneP  = p;
+            tuneI  = i;
+            tuneD  = d;
+            tuneKV = kv;
+
+            SparkFlexConfig update = new SparkFlexConfig();
+            update.closedLoop
+                .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+                .pid(tuneP, tuneI, tuneD)
+                .feedForward.kV(tuneKV);
+            shootermotor.configure(update,
+                ResetMode.kNoResetSafeParameters,
+                PersistMode.kNoPersistParameters);
+            DriverStation.reportWarning(
+                String.format("Shooter PID updated: P=%.5f I=%.5f D=%.4f kV=%.5f",
+                              tuneP, tuneI, tuneD, tuneKV), false);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -181,19 +225,14 @@ public class Shooter extends SubsystemBase {
         });
     }
 
-    public boolean shotDetected() {
-        if (shootermotor == null || !shooterIsOn) return false;
-        
-        double current = shootermotor.getOutputCurrent();
-        double baseline = shooterBaselineFilter.calculate(current);
-        
-        // Detect a spike of 40% above the rolling baseline
-        boolean spike = current > 5 && current > baseline * 1.4;
-        
-        // Edge detection — only true on the rising edge, not the whole duration
-        boolean risingEdge = spike && !lastShotDetected;
-        lastShotDetected = spike;
-        return risingEdge;
+    public boolean monitorShooter(){
+        double cur_cur = shootermotor.getOutputCurrent();
+        double ave_cur = shooter_cur_filt.calculate(cur_cur);
+        if (ave_cur*1.10 < cur_cur){
+            return true;
+        }else{
+            return false;
+        }
     }
 
     public boolean monitorFeed(){
@@ -207,7 +246,7 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command IndexFeed(){
-       return IntakeFeed().onlyWhile(()->(!monitorFeed() && !shotDetected())).andThen(IntakeFeedOff());
+       return IntakeFeed().onlyWhile(()->(!monitorFeed() && !monitorShooter())).andThen(IntakeFeedOff());
     }
 
     /** Run feed motor in reverse to assist intaking. Clears shooter-feed state. */
@@ -245,6 +284,22 @@ public class Shooter extends SubsystemBase {
         if (Math.abs(shooterEncoder.getVelocity()) >= Math.abs(shootspeed * 0.9)){
             return true;
         }else{ return false;}
+    }
+
+    /** Returns true on the rising edge of a ball passing through the shooter wheels. */
+    public boolean shotDetected() {
+        if (shootermotor == null || !shooterIsOn) {
+            lastShotDetected = false;
+            return false;
+        }
+        double current  = shootermotor.getOutputCurrent();
+        double baseline = shooterBaselineFilter.calculate(current);
+        boolean spike      = current > baseline * 1.2 && current > 5.0;
+        boolean risingEdge = spike && !lastShotDetected;
+        lastShotDetected   = spike;
+        SmartDashboard.putNumber("Shooter-Baseline", baseline);
+        SmartDashboard.putBoolean("Shooter-ShotDetected", risingEdge);
+        return risingEdge;
     }
 
     public Command ShootOn() {
@@ -318,6 +373,7 @@ public class Shooter extends SubsystemBase {
 
     @Override
     public void periodic() {
+        applyPIDFromDashboard();
         if (hoodEncoder    != null) SmartDashboard.putNumber("Hood",             hoodEncoder.getPosition());
         if (shooterEncoder != null) SmartDashboard.putNumber("Shooter Velocity", shooterEncoder.getVelocity());
         SmartDashboard.putNumber("Shooter Voltage", ave_filt.calculate(shootermotor.getAppliedOutput()*shootermotor.getBusVoltage()));
@@ -326,7 +382,7 @@ public class Shooter extends SubsystemBase {
         SmartDashboard.putBoolean("Shooter-FeedIsOn",       feedIsOn);
         SmartDashboard.putBoolean("Shooter-IntakeFeedIsOn", intakeFeedIsOn);
         SmartDashboard.putBoolean("Shooter-ShooterIsOn",    shooterIsOn);
-        SmartDashboard.putBoolean("Shot Fuel", shotDetected());
+        SmartDashboard.putBoolean("Shot Fuel", monitorShooter());
         SmartDashboard.putBoolean("Feed Fuel", monitorFeed());
         SmartDashboard.putNumber("ShooterCurrent", shootermotor.getOutputCurrent());
         SmartDashboard.putNumber("FeederCurrent", feedmotor.getOutputCurrent());
