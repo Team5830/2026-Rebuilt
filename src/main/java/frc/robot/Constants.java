@@ -85,16 +85,17 @@ public final class Constants {
     public static final int shootermotor = 10;
     public static final int shootermotor2 = 11;
     public static final int hoodmotor = 13;
+    public static final int  St_PetersMotor = 42;
     public static final double ForwardLimit = 56.0; //0.9 -> 56
     public static final double ReverseLimit = -5.0; //
     public static final double multiplier = 62.2;
     public static final double hoodp = 0.05;//.2
     public static final double hoodi = 0.0;
     public static final double hoodd = 0.01;
-    public static final double SpeedB = 170;
-    public static final double SpeedC = 3050;
-    public static final double AngleB = 15.3;
-    public static final double AngleC = -25.7;
+    public static final double SpeedB = 283;
+    public static final double SpeedC = 2860;
+    public static final double AngleB = 4.88;
+    public static final double AngleC = 8.14;
   }
   public static final class climber {
     public static final int climbermotor = 23;

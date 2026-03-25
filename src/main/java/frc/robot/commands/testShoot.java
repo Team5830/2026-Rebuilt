@@ -2,8 +2,11 @@ package frc.robot.commands;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.Constants;
 import frc.robot.Constants.shooter;
 import frc.robot.subsystems.Intake;
@@ -31,30 +34,25 @@ public final class testShoot extends Command {
     @Override
     public void initialize() {
         double distanceToHub = m_swerve.DistancetoHub();
-        System.out.println("DistanceToHub: " + distanceToHub);
-        SmartDashboard.putNumber("DistanceToHub", distanceToHub);
-        shooterspeed = SmartDashboard.getNumber("ShooterSpeed", 3500);
-        hoodangle = SmartDashboard.getNumber("HoodAngle", 0);
-        System.out.println("ShootSpeed: " + shooterspeed);
-        System.out.println("HoodAngle: " + hoodangle);
-        // Configure speed and angle based on range, then toggle shooter + feed
-        
-        m_shooter.setShootSpeed(shooterspeed).schedule();
-        m_shooter.moveHood(hoodangle).schedule();
-        m_shooter.toggleShooter().schedule();
-        new WaitCommand(2.0).andThen(m_shooter.toggleFeed()).andThen(m_intake.toggleFeedMode()).schedule();
-        //m_shooter.toggleFeed().schedule();
-        //m_intake.toggleFeedMode().schedule();
-        /* 
-        new ParallelCommandGroup(m_shooter.setShootSpeed(shooterspeed), 
-            m_shooter.moveHood(hoodangle), 
-            m_shooter.toggleShooter()
-            ).andThen(
-                new WaitCommand(3.0)
-            ).andThen( new ParallelCommandGroup(   
-                 m_shooter.toggleFeed(),  
-                 m_intake.toggleFeedMode() )
-            ).schedule();*/
+        // use as a toggle 
+        if((m_shooter.shooterIsOn)){
+            new SequentialCommandGroup(m_intake.FeedOff(), m_shooter.FeedOff(), m_shooter.toggleShooter()).schedule();
+        }else{
+            System.out.println("DistanceToHub: " + distanceToHub);
+            SmartDashboard.putNumber("DistanceToHub", distanceToHub);
+            shooterspeed = SmartDashboard.getNumber("ShooterSpeed", 3500);
+            hoodangle = SmartDashboard.getNumber("HoodAngle", 0);
+            m_shooter.setShootSpeed(shooterspeed).schedule();
+            m_shooter.moveHood(hoodangle).schedule();
+            new SequentialCommandGroup(
+                m_shooter.toggleShooter(),
+                new WaitUntilCommand(m_shooter::shooterAtTargetSpeed).withTimeout(5.0),
+                new SequentialCommandGroup(
+                    m_shooter.FeedOn(),
+                    m_shooter.KeysToTheKingdomtoggle(),
+                    new WaitCommand(0.5), 
+                    m_intake.FeedOff()) ).schedule();
+     }
     }
 
     @Override

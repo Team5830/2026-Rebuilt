@@ -159,6 +159,7 @@ public class Vision
     }
     for (Cameras camera : Cameras.values())
     {
+      camera.updateUnreadResults();
       Optional<EstimatedRobotPose> poseEst = getEstimatedGlobalPose(camera);
       if (Robot.isSimulation()) {
         poseEst.ifPresentOrElse(
@@ -279,19 +280,19 @@ public class Vision
              new Rotation3d(0, Math.toRadians(0), Math.toRadians(0)),
              new Translation3d(Units.inchesToMeters(4.75),
                                Units.inchesToMeters(0),
-                               Units.inchesToMeters(21)),
+                               Units.inchesToMeters(21.0)),
              VecBuilder.fill(4, 4, 8), VecBuilder.fill(0.5, 0.5, 1)),
     RIGHT_CAM("Right",
              new Rotation3d(0, Math.toRadians(0), Math.toRadians(-50)),
              new Translation3d(Units.inchesToMeters(4.75),
                                Units.inchesToMeters(-7.75),
-                               Units.inchesToMeters(21)),
+                               Units.inchesToMeters(21.0)),
              VecBuilder.fill(4, 4, 8), VecBuilder.fill(0.5, 0.5, 1)),
     LEFT_CAM("Left",
-             new Rotation3d(0, Math.toRadians(0), Math.toRadians(50)),
-             new Translation3d(Units.inchesToMeters(4.75),
-                               Units.inchesToMeters(7.75),
-                               Units.inchesToMeters(21)),
+             new Rotation3d(0, Math.toRadians(0), Math.toRadians(180)),
+             new Translation3d(Units.inchesToMeters(-13.0),
+                               Units.inchesToMeters(9.25),
+                               Units.inchesToMeters(11.0)),
              VecBuilder.fill(4, 4, 8), VecBuilder.fill(0.5, 0.5, 1));
 
                

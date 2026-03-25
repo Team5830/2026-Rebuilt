@@ -14,11 +14,17 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
+import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.filter.MedianFilter;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.RepeatCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.Constants;
 
 public class Shooter extends SubsystemBase {
@@ -30,21 +36,32 @@ public class Shooter extends SubsystemBase {
     private final SparkClosedLoopController hoodController;
     private final RelativeEncoder           hoodEncoder;
     private final RelativeEncoder           shooterEncoder;
+    //private final RelativeEncoder           St_PeterEncoder;
+    private final SparkMax                  St_PetersMotor;
 
     private double  shootspeed       = 3500;
     public boolean shooterIsOn      = false;
     private boolean feedIsOn         = false;
     private boolean intakeFeedIsOn   = false;
+    private boolean GateOpen         = false;
+    private MedianFilter ave_filt = new MedianFilter(50);
+    private final LinearFilter shooterBaselineFilter = LinearFilter.movingAverage(75); // ~1.5s window
+    private boolean lastShotDetected = false;
+    private MedianFilter shooter_cur_filt = new MedianFilter(5);
+    private MedianFilter feeder_cur_filt = new MedianFilter(5);
 
     @SuppressWarnings("removal")
     public Shooter() {
         SparkMax  feed   = null, hood   = null;
+        SparkMax  StPeter = null;
         SparkFlex shoot1 = null, shoot2 = null;
+        
         try {
             feed   = new SparkMax( Constants.shooter.feedmotor,     MotorType.kBrushless);
             shoot1 = new SparkFlex(Constants.shooter.shootermotor,  MotorType.kBrushless);
             shoot2 = new SparkFlex(Constants.shooter.shootermotor2, MotorType.kBrushless);
             hood   = new SparkMax( Constants.shooter.hoodmotor,     MotorType.kBrushless);
+            StPeter = new SparkMax(Constants.shooter.St_PetersMotor, MotorType.kBrushless);
         } catch (RuntimeException ex) {
             DriverStation.reportError("Error instantiating Shooter: " + ex.getMessage(), true);
         }
@@ -52,6 +69,7 @@ public class Shooter extends SubsystemBase {
         shootermotor  = shoot1;
         shootermotor2 = shoot2;
         hoodmotor     = hood;
+        St_PetersMotor = StPeter;
 
         // --- Shooter wheels ---
         SparkFlexConfig shooterConfig = new SparkFlexConfig();
@@ -60,7 +78,7 @@ public class Shooter extends SubsystemBase {
         shooterConfig.closedLoopRampRate(0.3);
         shooterConfig.closedLoop
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-            .pid(0.003, 0.0, 0.18);
+            .pid(0.003, 0.0, 0.18).feedForward.kV(0.0002);
         configureMotorFlex(shootermotor, shooterConfig, "shooter");
         shooterEncoder = (shootermotor != null) ? shootermotor.getEncoder() : null;
 
@@ -68,6 +86,12 @@ public class Shooter extends SubsystemBase {
         SparkMaxConfig feedConfig = new SparkMaxConfig();
         feedConfig.idleMode(IdleMode.kCoast);
         configureMotor(feedmotor, feedConfig, "feed");
+
+        // --- St Peter's Motor ---
+        SparkMaxConfig StPeterConfig = new SparkMaxConfig();
+        StPeterConfig.idleMode(IdleMode.kCoast);
+        configureMotor(St_PetersMotor, StPeterConfig, "St Peter");
+        //St_PeterEncoder = (St_PetersMotor != null) ? St_PetersMotor.getEncoder() : null;
 
         // --- Shooter follower ---
         SparkFlexConfig shooter2Config = new SparkFlexConfig();
@@ -160,7 +184,7 @@ public class Shooter extends SubsystemBase {
     /** Push fuel to the shooter. Clears intake-feed state. */
     public Command FeedOn() {
         return runOnce(() -> {
-            if (feedmotor != null) feedmotor.setVoltage(-6); 
+            if (feedmotor != null) feedmotor.setVoltage(-8); 
             feedIsOn       = true;
             intakeFeedIsOn = false;
         });
@@ -171,6 +195,35 @@ public class Shooter extends SubsystemBase {
             if (feedmotor != null) feedmotor.setVoltage(0.0);
             feedIsOn = false;
         });
+    }
+
+    public boolean shotDetected() {
+        if (shootermotor == null || !shooterIsOn) return false;
+        
+        double current = shootermotor.getOutputCurrent();
+        double baseline = shooterBaselineFilter.calculate(current);
+        
+        // Detect a spike of 40% above the rolling baseline
+        boolean spike = current > 5 && current > baseline * 1.2;
+        
+        // Edge detection — only true on the rising edge, not the whole duration
+        boolean risingEdge = spike && !lastShotDetected;
+        lastShotDetected = spike;
+        return risingEdge;
+    }
+
+    public boolean monitorFeed(){
+        double cur_cur = feedmotor.getOutputCurrent();
+        double ave_cur = feeder_cur_filt.calculate(cur_cur);
+        if (ave_cur*1.10 < cur_cur){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public Command IndexFeed(){
+       return IntakeFeed().onlyWhile(()->(!monitorFeed() && !shotDetected())).andThen(IntakeFeedOff());
     }
 
     /** Run feed motor in reverse to assist intaking. Clears shooter-feed state. */
@@ -189,6 +242,33 @@ public class Shooter extends SubsystemBase {
         });
     }
 
+    public Command GateOpen() {
+        return runOnce(() -> {
+            if (St_PetersMotor != null) St_PetersMotor.setVoltage(8);
+            GateOpen = true;
+        });
+    }
+
+    public Command GateClosed() {
+        return runOnce(() -> {
+            if (St_PetersMotor != null) St_PetersMotor.setVoltage(0.0);
+            GateOpen = false;
+        });
+    }
+
+    public Command KeysToTheKingdomtoggle(){
+        return new SequentialCommandGroup(new WaitUntilCommand(()->shooterAtTargetSpeed()).withTimeout(5), 
+                                            new SequentialCommandGroup(new WaitCommand(1), 
+                                            GateOpen(), 
+                                            new WaitCommand(1), 
+                                            GateClosed()).repeatedly().until(()->shooterIsOn = false), GateClosed());
+    }
+
+      public Command KeysToTheKingdomtest(){
+        return new SequentialCommandGroup(GateOpen(), new WaitCommand(0.4), GateClosed().repeatedly().until(()->shooterIsOn = false));
+    }
+
+
     /**
      * Update shoot speed. If the shooter is already running, applies the new
      * setpoint immediately so the wheels ramp without needing a toggle.
@@ -198,6 +278,16 @@ public class Shooter extends SubsystemBase {
             shootspeed = setpoint;
             if (shooterIsOn) applyShooterSetpoint();
         });
+    }
+
+    public double getShooterSpeed(){
+        return shooterEncoder.getVelocity();
+    }
+
+    public boolean shooterAtTargetSpeed(){
+        if (Math.abs(shooterEncoder.getVelocity()) >= Math.abs(shootspeed * 0.9)){
+            return true;
+        }else{ return false;}
     }
 
     public Command ShootOn() {
@@ -213,14 +303,6 @@ public class Shooter extends SubsystemBase {
 
             shooterIsOn = false;
         });
-    }
-
-    /** Spin up wheels, wait for speed, then enable feed. */
-    public Command ShooterOn() {
-        return IntakeFeedOff()
-            .andThen(ShootOn())
-            .andThen(new WaitCommand(0.2))
-            .andThen(FeedOn());
     }
 
     /** Cut feed, wait briefly, then spin down wheels. */
@@ -243,17 +325,7 @@ public class Shooter extends SubsystemBase {
             }
         });
     }
-/*
-     public Command toggleFeed() {
-        return runOnce(() -> {          // fix: was branching outside lambda
-            if (feedIsOn) {
-                FeedOff();
-            } else {
-                FeedOn();
-            }
-        });
-    }
- */
+
      public Command toggleFeed() {
         return runOnce(() -> {
             if (feedIsOn) {
@@ -291,11 +363,15 @@ public class Shooter extends SubsystemBase {
     public void periodic() {
         if (hoodEncoder    != null) SmartDashboard.putNumber("Hood",             hoodEncoder.getPosition());
         if (shooterEncoder != null) SmartDashboard.putNumber("Shooter Velocity", shooterEncoder.getVelocity());
-        SmartDashboard.putNumber("Shooter Voltage", shootermotor.getAppliedOutput()*shootermotor.getBusVoltage());
+        SmartDashboard.putNumber("Shooter Voltage", ave_filt.calculate(shootermotor.getAppliedOutput()*shootermotor.getBusVoltage()));
         SmartDashboard.putNumber("Shooter1Temp", shootermotor.getMotorTemperature());
         SmartDashboard.putNumber("Shooter2Temp", shootermotor2.getMotorTemperature());
         SmartDashboard.putBoolean("Shooter-FeedIsOn",       feedIsOn);
         SmartDashboard.putBoolean("Shooter-IntakeFeedIsOn", intakeFeedIsOn);
-        SmartDashboard.putBoolean("Shooter-ShooterIsOn",    shooterIsOn);
+        SmartDashboard.putBoolean("SHOOTER IS ON", shooterIsOn);
+        SmartDashboard.putBoolean("Shot Fuel", shotDetected());
+        SmartDashboard.putBoolean("Feed Fuel", monitorFeed());
+        SmartDashboard.putNumber("ShooterCurrent", shootermotor.getOutputCurrent());
+        SmartDashboard.putNumber("FeederCurrent", feedmotor.getOutputCurrent());
     }
 }

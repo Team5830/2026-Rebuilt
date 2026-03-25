@@ -9,6 +9,7 @@ import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.SwerveSubsystem;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 
 /**
  * One-shot command that configures shooter speed and hood angle based on the
@@ -36,15 +37,25 @@ public final class Shoot extends Command {
         System.out.println("moveHood: " + (distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC));
         // Configure speed and angle based on range, then toggle shooter + feed
         if((m_shooter.shooterIsOn)){
-        new SequentialCommandGroup(m_intake.toggleFeedMode(), m_shooter.toggleFeed(), m_shooter.toggleShooter()).schedule();
+            new SequentialCommandGroup(m_intake.FeedOff(), m_shooter.FeedOff(), m_shooter.ShootOff()).schedule();
         }else{
-        m_shooter.setShootSpeed(distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC).schedule();
-        m_shooter.moveHood(distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC).schedule();
-        new SequentialCommandGroup(
-        m_shooter.toggleShooter(),
-        new WaitCommand(3.0),  new SequentialCommandGroup(m_shooter.toggleFeed(), new WaitCommand(0.5), m_intake.toggleFeedMode()) ).schedule();
+           double speed = distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC;
+            double angle = distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC;
+
+            new SequentialCommandGroup(
+                m_shooter.setShootSpeed(speed),
+                m_shooter.moveHood(angle),
+                m_shooter.ShootOn(),
+                new WaitUntilCommand(m_shooter::shooterAtTargetSpeed).withTimeout(5.0),
+                m_shooter.FeedOn(),
+                new WaitCommand(0.5),
+                m_intake.FeedOn(),
+                m_shooter.KeysToTheKingdomtoggle()
+            ).schedule();
+
+            //m_shooter.FeedOn().
      }
-    }/* */
+    }
 
     @Override
     public boolean isFinished() {

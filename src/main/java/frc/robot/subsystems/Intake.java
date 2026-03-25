@@ -143,6 +143,6 @@ public class Intake extends SubsystemBase {
     @Override
     public void periodic() {
         SmartDashboard.putBoolean("Intake-feedIsOn",   feedIsOn);
-        SmartDashboard.putBoolean("Intake-intakeIsOn", intakeIsOn);
+        SmartDashboard.putBoolean("INTAKE IS ON", intakeIsOn);
     }
 }

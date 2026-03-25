@@ -7,25 +7,31 @@
         {
           "type": "path",
           "data": {
-            "pathName": "pos1"
+            "pathName": "Get center balls"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "pickup1"
+            "pathName": "Return from center balls"
           }
         },
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "pickup2"
+            "name": "ToggleShoot"
           }
         },
         {
-          "type": "path",
+          "type": "wait",
           "data": {
-            "pathName": "pickup3"
+            "waitTime": 10.0
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ToggleShoot"
           }
         }
       ]

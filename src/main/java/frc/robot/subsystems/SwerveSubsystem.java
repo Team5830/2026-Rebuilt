@@ -33,6 +33,7 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -66,6 +67,7 @@ public class SwerveSubsystem extends SubsystemBase {
     private double maxChassisAngularVelocity;
     public PathConstraints constraints;
     private AprilTagFieldLayout aprilTagFieldLayout;
+    private static final double HUB_OFFSET_M = 24 * 2.54 / 100.0;
 
     public SwerveSubsystem(File directory){
         /*Configure the telemetry before creating the swerve to avoid clutter.*/
@@ -81,7 +83,7 @@ public class SwerveSubsystem extends SubsystemBase {
         maxChassisVelocity = swerveDrive.getMaximumChassisVelocity();
         maxChassisAngularVelocity = swerveDrive.getMaximumChassisAngularVelocity();
         swerveDrive.setCosineCompensator(false);
-        swerveDrive.setAngularVelocityCompensation(true, true, 0.1);
+        swerveDrive.setAngularVelocityCompensation(!RobotBase.isSimulation(), true, 0.1);
         swerveDrive.setChassisDiscretization(true, 0.015);
         setupPhotonVision();
         setupPathPlanner();
@@ -90,12 +92,12 @@ public class SwerveSubsystem extends SubsystemBase {
         maxChassisVelocity, 3.0,
         maxChassisAngularVelocity, Units.degreesToRadians(720));
 
-        Pose2d startingPose = isRedAlliance() ? new Pose2d(new Translation2d(Meter.of(1),
+        Pose2d startingPose = isRedAlliance() ?  new Pose2d(new Translation2d(Meter.of(16),
                                                                       Meter.of(4)),
-                                                    Rotation2d.fromDegrees(0))
-                                       : new Pose2d(new Translation2d(Meter.of(16),
+                                                    Rotation2d.fromDegrees(180))
+                                       : new Pose2d(new Translation2d(Meter.of(1),
                                                                       Meter.of(4)),
-                                                    Rotation2d.fromDegrees(180));
+                                                    Rotation2d.fromDegrees(0));
     }
 
     
@@ -252,20 +254,6 @@ public class SwerveSubsystem extends SubsystemBase {
         new Translation2d(cs.vxMetersPerSecond, cs.vyMetersPerSecond).getNorm());
   }
 
-  
-      //This is how 614 did their simulationPeriodic, I decided our way looked better.
-      @Override
-      public void simulationPeriodic(){
-      Optional<Pose2d> simPoseOptional = swerveDrive.getSimulationDriveTrainPose();
-      if(simPoseOptional.isPresent()) {
-        Pose2d simPose = simPoseOptional.get();
-        addVisionMeasurement(simPose, Timer.getFPGATimestamp());
-        Pose2d odometryPose = getPose();
-        double error = odometryPose.getTranslation().getDistance(simPose.getTranslation());
-        }
-      }
-    
-
     public ChassisSpeeds getFieldVelocity()
     {
       return swerveDrive.getFieldVelocity();
@@ -282,16 +270,14 @@ public class SwerveSubsystem extends SubsystemBase {
       var alliance = DriverStation.getAlliance();
       return alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red;
     }  
-   /*   
-    @Override
-  public void simulationPeriodic() {
-    vision.simulationPeriodic(swerveDrive.getPose());
-    var debugField = vision.getSimDebugField();
-    debugField.getObject("EstimatedRobot").setPose(swerveDrive.getPose());
-    if (vision != null) {
-    vision.simulationPeriodic(swerveDrive.getPose());
-    }
-  } */
+
+   @Override
+public void simulationPeriodic() {
+    vision.simulationPeriodic(swerveDrive.getSimulationDriveTrainPose()
+        .orElse(swerveDrive.getPose()));
+    vision.updatePoseEstimation(swerveDrive);
+}
+
 
   public void addVisionMeasurement(Pose2d visionPose, double timestampSeconds){
     swerveDrive.addVisionMeasurement(visionPose, timestampSeconds);
@@ -327,11 +313,18 @@ public Command aimAtTarget(Cameras camera)
         if (result.hasTargets()) {
           drive(getTargetSpeeds(0, 0,
                                           Rotation2d.fromDegrees(result.getBestTarget().getYaw())));
-                  }
-                }
-              });
-            }
-Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Red);
+        }
+      }
+    });
+  }
+
+@Override
+public void periodic() {
+    swerveDrive.updateOdometry();
+    if (!RobotBase.isSimulation()) {
+        vision.updatePoseEstimation(swerveDrive);
+    }
+}
 
 public DriverStation.Alliance getAlliance() {
     return DriverStation.getAlliance()
@@ -340,10 +333,22 @@ public DriverStation.Alliance getAlliance() {
 
 /** Get distance to the hub (alliance-aware). */
   public double DistancetoHub() {
+    
     // Select hub tag by alliance
-    int targetTag = (alliance == Alliance.Blue) ? 26 : 10;
-    return getDistanceToTag(targetTag);
+    int targetTag = (getAlliance() == Alliance.Blue) ? 26 : 10;
+    Pose2d tagpose  = GetTagPose(targetTag);
+    // Offset toward hub behind tag
+    //boolean red = swerve.getAlliance() == DriverStation.Alliance.Red;
+    double offsetX  = (getAlliance() == Alliance.Red) ? -HUB_OFFSET_M : HUB_OFFSET_M;
+    Pose2d hubpose  = new Pose2d(tagpose.getX() + offsetX, tagpose.getY(), tagpose.getRotation());
+    Pose2d robot    = getPose();
+    double ydif = (hubpose.getY() - robot.getY());
+    double xdif = hubpose.getX() - robot.getX();
+    return Math.sqrt(xdif*xdif + ydif*ydif);
+
   }
+
+  
 
   public double getDistanceToTag(int id) {
     return vision.getDistanceFromAprilTag(id);
