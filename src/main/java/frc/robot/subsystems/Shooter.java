@@ -184,7 +184,7 @@ public class Shooter extends SubsystemBase {
     /** Push fuel to the shooter. Clears intake-feed state. */
     public Command FeedOn() {
         return runOnce(() -> {
-            if (feedmotor != null) feedmotor.setVoltage(-6); 
+            if (feedmotor != null) feedmotor.setVoltage(-8); 
             feedIsOn       = true;
             intakeFeedIsOn = false;
         });
@@ -244,7 +244,7 @@ public class Shooter extends SubsystemBase {
 
     public Command GateOpen() {
         return runOnce(() -> {
-            if (St_PetersMotor != null) St_PetersMotor.setVoltage(7);
+            if (St_PetersMotor != null) St_PetersMotor.setVoltage(8);
             GateOpen = true;
         });
     }
@@ -257,11 +257,11 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command KeysToTheKingdomtoggle(){
-        return new SequentialCommandGroup(new WaitUntilCommand(()->shooterAtTargetSpeed()), 
-                                            new WaitCommand(1), 
+        return new SequentialCommandGroup(new WaitUntilCommand(()->shooterAtTargetSpeed()).withTimeout(5), 
+                                            new SequentialCommandGroup(new WaitCommand(1), 
                                             GateOpen(), 
                                             new WaitCommand(1), 
-                                            GateClosed().repeatedly().until(()->shooterIsOn = false));
+                                            GateClosed()).repeatedly().until(()->shooterIsOn = false), GateClosed());
     }
 
       public Command KeysToTheKingdomtest(){
