@@ -44,6 +44,7 @@ public class Shooter extends SubsystemBase {
     private boolean feedIsOn         = false;
     private boolean intakeFeedIsOn   = false;
     private boolean GateOpen         = false;
+    private boolean GateReject       = false;
     private MedianFilter ave_filt = new MedianFilter(50);
     private final LinearFilter shooterBaselineFilter = LinearFilter.movingAverage(75); // ~1.5s window
     private boolean lastShotDetected = false;
@@ -246,6 +247,7 @@ public class Shooter extends SubsystemBase {
         return runOnce(() -> {
             if (St_PetersMotor != null) St_PetersMotor.setVoltage(8);
             GateOpen = true;
+            GateReject=false;
         });
     }
 
@@ -253,15 +255,32 @@ public class Shooter extends SubsystemBase {
         return runOnce(() -> {
             if (St_PetersMotor != null) St_PetersMotor.setVoltage(0.0);
             GateOpen = false;
+            GateReject = false;
+        });
+    }
+
+    public Command GateReject() {
+        return runOnce(() -> {
+            if (St_PetersMotor != null) St_PetersMotor.setVoltage(-4);
+            GateOpen = false;
+            GateReject = true;
         });
     }
 
     public Command KeysToTheKingdomtoggle(){
-        return new SequentialCommandGroup(new WaitUntilCommand(()->shooterAtTargetSpeed()).withTimeout(5), 
-                                            new SequentialCommandGroup(new WaitCommand(1), 
-                                            GateOpen(), 
-                                            new WaitCommand(1), 
-                                            GateClosed()).repeatedly().until(()->shooterIsOn = false), GateClosed());
+        return runOnce( () -> {
+            if (shooterIsOn) {
+                new SequentialCommandGroup(FeedOff(),ShootOff(),GateClosed());
+            } else
+                {
+                new SequentialCommandGroup(new WaitUntilCommand(()->shooterAtTargetSpeed()).withTimeout(5),
+                    FeedOn(),
+                    GateOpen(), 
+                    new WaitCommand(1), 
+                    GateClosed()
+                ).repeatedly();
+                }
+            });
     }
 
       public Command KeysToTheKingdomtest(){

@@ -51,7 +51,7 @@ public final class Aim extends Command {
         Pose2d robot = swerve.getPose();
         targetAngleDegrees = Math.toDegrees(
         Math.atan2(hubpose.getY() - robot.getY(), hubpose.getX() - robot.getX()));
-        aimcmd = swerve.driveFieldOriented(driveInput.aim(hubpose).headingWhile(true).aimWhile(()->Math.hypot(joystick.getRawAxis(4), joystick.getRawAxis(5)) < 0.1));
+        aimcmd = swerve.driveFieldOriented(driveInput.aim(hubpose).headingWhile(true)).onlyWhile(()->Math.hypot(joystick.getRawAxis(4), joystick.getRawAxis(5)) < 0.1);
         aimcmd.initialize();
     }
 
