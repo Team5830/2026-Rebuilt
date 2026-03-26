@@ -166,10 +166,14 @@ public class RobotContainer {
     SmartDashboard.putNumber("HoodAngle", 10);
     
     SmartDashboard.putData("Test Shoot", new testShoot(m_Shooter, m_intake, m_swerve));
-    SmartDashboard.putData("Keys Test", m_Shooter.KeysToTheKingdomtest());
+    //SmartDashboard.putData("Keys Test", m_Shooter.KeysToTheKingdomtest());
     SmartDashboard.putData("FireOneRepeat", new FireOne(m_Shooter).repeatedly());
     SmartDashboard.putData("FireOne", new FireOne(m_Shooter));
     SmartDashboard.putData("Cancel Shooter", Commands.runOnce(() -> {}, m_Shooter));
+    //SmartDashboard.putData("GateOpen", new InstantCommand(m_Shooter.GateOpen()));
+    SmartDashboard.putData("GateReject", m_Shooter.GateRejectToggle());
+    SmartDashboard.putData("KeysKingdon",new SequentialCommandGroup(m_Shooter.ShootOn(), m_Shooter.KeysToTheKingdomtoggle()));
+  
     //Warm up Path following commands
     FollowPathCommand.warmupCommand();
     // Configure the trigger bindings
@@ -198,7 +202,7 @@ public class RobotContainer {
     /*Co-driver controls  Port 2 */
     // xboxController.povUp().onTrue( m_climber.Up());
     // xboxController.povDown().onTrue(m_climber.Down());
-    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(),m_Shooter.GateReject(), m_Lights.red()));
+    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(),m_Shooter.GateRejectToggle(), m_Lights.red()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
     xboxController.leftTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerve));
     xboxController.x().onTrue(m_Lights.pink());
