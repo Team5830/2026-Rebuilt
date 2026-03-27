@@ -20,21 +20,21 @@ public class FireOne extends SequentialCommandGroup {
     public FireOne(Shooter shooter) {
         addCommands(
             // 1. Spin up wheels
-            shooter.ShootOn(),
+            shooter.shootOn(),
 
             // 2. Wait until wheels reach target speed (5s safety timeout)
             new WaitUntilCommand(shooter::shooterAtTargetSpeed)
                 .withTimeout(SPEED_TIMEOUT_SECS),
 
             // 3. Turn on feed
-            shooter.FeedOn(),
+            shooter.feedOn(),
 
             // 4. Wait until shot is detected (3s safety timeout)
             new WaitUntilCommand(shooter::shotDetected)
                 .withTimeout(SHOT_TIMEOUT_SECS),
 
             // 5. Turn off feed — ball has cleared
-            shooter.FeedOff()
+            shooter.feedOff()
         );
     }
 }

@@ -154,8 +154,8 @@ public class RobotContainer {
     SmartDashboard.putData("INTAKEtoggleFeed", m_intake.toggleFeedMode()); 
     SmartDashboard.putData("INTAKEtoggleIntake", m_intake.toggleIntake()); 
     SmartDashboard.putData("ShootertoggleFeed", m_Shooter.toggleFeed());
-    SmartDashboard.putData("ShooterFeedOn", m_Shooter.FeedOn());
-    SmartDashboard.putData("ShooterFeedOff", m_Shooter.FeedOff());
+    SmartDashboard.putData("ShooterFeedOn", m_Shooter.feedOn());
+    SmartDashboard.putData("ShooterFeedOff", m_Shooter.feedOff());
     SmartDashboard.putData("ShootertoggleInakeFeed", m_Shooter.toggleIntakeFeed());
     SmartDashboard.putData("ShootertoggleShooter", m_Shooter.toggleShooter());
     SmartDashboard.putData("INTAKE ON", m_intake.IntakeOn());
@@ -171,8 +171,8 @@ public class RobotContainer {
     SmartDashboard.putData("FireOne", new FireOne(m_Shooter));
     SmartDashboard.putData("Cancel Shooter", Commands.runOnce(() -> {}, m_Shooter));
     //SmartDashboard.putData("GateOpen", new InstantCommand(m_Shooter.GateOpen()));
-    SmartDashboard.putData("GateReject", m_Shooter.GateRejectToggle());
-    SmartDashboard.putData("KeysKingdon",new SequentialCommandGroup(m_Shooter.ShootOn(), m_Shooter.KeysToTheKingdomtoggle()));
+    SmartDashboard.putData("GateReject", m_Shooter.gateRejectToggle());
+    SmartDashboard.putData("KeysKingdon",new SequentialCommandGroup(m_Shooter.toggleShooter(), m_Shooter.keysToTheKingdomToggle()));
   
     //Warm up Path following commands
     FollowPathCommand.warmupCommand();
@@ -202,12 +202,12 @@ public class RobotContainer {
     /*Co-driver controls  Port 2 */
     // xboxController.povUp().onTrue( m_climber.Up());
     // xboxController.povDown().onTrue(m_climber.Down());
-    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(),m_Shooter.GateRejectToggle(), m_Lights.red()));
+    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(),m_Shooter.gateRejectToggle(), m_Lights.red()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
     xboxController.leftTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerve));
     xboxController.x().onTrue(m_Lights.pink());
-    xboxController.povUp().onTrue(m_Shooter.adjustHoodup());
-    xboxController.povDown().onTrue(m_Shooter.adjustHooddown());
+    xboxController.povUp().onTrue(m_Shooter.adjustHoodUp());
+    xboxController.povDown().onTrue(m_Shooter.adjustHoodDown());
     xboxController.b().onTrue(m_intake.toggleReverseIntake());
     }
     

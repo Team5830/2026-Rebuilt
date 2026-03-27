@@ -36,7 +36,7 @@ public final class testShoot extends Command {
         double distanceToHub = m_swerve.DistancetoHub();
         // use as a toggle 
         if((m_shooter.shooterIsOn)){
-            new SequentialCommandGroup(m_intake.FeedOff(), m_shooter.FeedOff(), m_shooter.toggleShooter()).schedule();
+            new SequentialCommandGroup(m_intake.FeedOff(), m_shooter.feedOff(), m_shooter.toggleShooter()).schedule();
         }else{
             System.out.println("DistanceToHub: " + distanceToHub);
             SmartDashboard.putNumber("DistanceToHub", distanceToHub);
@@ -48,8 +48,8 @@ public final class testShoot extends Command {
                 m_shooter.toggleShooter(),
                 new WaitUntilCommand(m_shooter::shooterAtTargetSpeed).withTimeout(5.0),
                 new SequentialCommandGroup(
-                    m_shooter.FeedOn(),
-                    m_shooter.KeysToTheKingdomtoggle(),
+                    m_shooter.feedOn(),
+                    m_shooter.keysToTheKingdomToggle(),
                     new WaitCommand(0.5), 
                     m_intake.FeedOff()) ).schedule();
      }
