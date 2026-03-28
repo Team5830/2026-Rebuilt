@@ -24,7 +24,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.Aim;
 import frc.robot.commands.AutoWaypoints;
 import frc.robot.commands.FireOne;
@@ -90,13 +89,6 @@ public class RobotContainer {
           .scaleTranslation(0.95)
           .allianceRelativeControl(true);
 
-      SwerveInputStream driveAngularVelocityKeyboard =
-      SwerveInputStream.of(
-              m_swerve.getSwerveDrive(), () -> -joystick1.getLeftY(), () -> -joystick1.getLeftX())
-          .withControllerRotationAxis(() -> joystick1.getRawAxis(2))
-          .deadband(Constants.controller.DEADBAND)
-          .scaleTranslation(0.95)
-          .allianceRelativeControl(true);
     driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
     driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
     driveChooser.onChange((selectedOption)->{
@@ -152,7 +144,6 @@ public class RobotContainer {
     SmartDashboard.putData("Right", new AutoWaypoints(m_swerve, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
     SmartDashboard.putData("INTAKEtoggleIntake", m_intake.toggleIntake()); //new ParallelCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(), m_Lights.red()));
     SmartDashboard.putData("INTAKEtoggleFeed", m_intake.toggleFeedMode()); 
-    SmartDashboard.putData("INTAKEtoggleIntake", m_intake.toggleIntake()); 
     SmartDashboard.putData("ShootertoggleFeed", m_Shooter.toggleFeed());
     SmartDashboard.putData("ShooterFeedOn", m_Shooter.feedOn());
     SmartDashboard.putData("ShooterFeedOff", m_Shooter.feedOff());

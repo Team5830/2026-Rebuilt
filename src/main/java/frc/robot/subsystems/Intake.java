@@ -20,8 +20,8 @@ public class Intake extends SubsystemBase {
 
     private final SparkFlex intakeMotor1;
     private final SparkMax  intakeMotor2;
-    private SparkFlexConfig intakeConfig1;
-    private SparkMaxConfig intakeConfig2;
+    //private SparkFlexConfig intakeConfig1;
+    //private SparkMaxConfig intakeConfig2;
 
     private boolean intakeIsOn = false;
     private boolean feedIsOn   = false;
@@ -41,9 +41,9 @@ public class Intake extends SubsystemBase {
         }
         intakeMotor1 = m1;
         intakeMotor2 = m2;
-        intakeConfig1 = new SparkFlexConfig();
+        SparkFlexConfig intakeConfig1 = new SparkFlexConfig();
         intakeConfig1.smartCurrentLimit(40);
-        intakeConfig2 = new SparkMaxConfig();
+        SparkMaxConfig intakeConfig2 = new SparkMaxConfig();
         intakeConfig2.smartCurrentLimit(40);
         configureMotorFlex(intakeMotor1, intakeConfig1, "intake1");
         configureMotor(intakeMotor2, intakeConfig2, "intake2");

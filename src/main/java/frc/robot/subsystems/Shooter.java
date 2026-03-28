@@ -59,9 +59,8 @@ public class Shooter extends SubsystemBase {
     // Filters
     // -------------------------------------------------------------------------
  
-    private final MedianFilter  aveFilt              = new MedianFilter(50);
+    //private final MedianFilter  aveFilt              = new MedianFilter(50);
     private final LinearFilter  shooterBaselineFilter = LinearFilter.movingAverage(75); // ~1.5s window
-    private final MedianFilter  shooterCurrentFilt   = new MedianFilter(5);
     private final MedianFilter  feederCurrentFilt    = new MedianFilter(5);
  
     private boolean lastShotDetected = false;
@@ -187,11 +186,12 @@ public class Shooter extends SubsystemBase {
     // -------------------------------------------------------------------------
  
     public double getShooterSpeed() {
-        return shooterEncoder.getVelocity();
+        return shooterEncoder != null ? shooterEncoder.getVelocity() : 0.0;
     }
- 
+
     public boolean shooterAtTargetSpeed() {
-        return Math.abs(shooterEncoder.getVelocity()) >= Math.abs(shootSpeed * 0.9);
+        if (shooterEncoder == null) return false;
+            return Math.abs(shooterEncoder.getVelocity()) >= Math.abs(shootSpeed * 0.9);
     }
  
     /** Returns true on the rising edge of a current spike — indicates a note was fired. */
@@ -208,11 +208,11 @@ public class Shooter extends SubsystemBase {
  
     /** Returns true when feeder current spikes above its rolling average — indicates a note is present. */
     public boolean monitorFeed() {
-        double current    = feedMotor.getOutputCurrent();
-        double average    = feederCurrentFilt.calculate(current);
+        if (feedMotor == null) return false;
+        double current = feedMotor.getOutputCurrent();
+        double average = feederCurrentFilt.calculate(current);
         return current > average * 1.10;
     }
- 
     // -------------------------------------------------------------------------
     // Hood commands
     // -------------------------------------------------------------------------
@@ -269,10 +269,9 @@ public class Shooter extends SubsystemBase {
  
     /** Cut feed, wait briefly, then spin down wheels. */
     public Command shooterOff() {
-        shooterIsOn = false;
-        return feedOff()
-            .andThen(new WaitCommand(0.2))
-            .andThen(shootOff());
+    return feedOff()
+        .andThen(new WaitCommand(0.2))
+        .andThen(shootOff());  // shootOff() already sets shooterIsOn = false inside its lambda
     }
  
     /** Toggle shooter on/off. */
@@ -464,8 +463,10 @@ public class Shooter extends SubsystemBase {
         if (shooterEncoder != null) SmartDashboard.putNumber("Shooter Velocity", shooterEncoder.getVelocity());
  
         //SmartDashboard.putNumber ("Shooter Voltage",        aveFilt.calculate(shooterMotor.getAppliedOutput() * shooterMotor.getBusVoltage()));
-        SmartDashboard.putNumber ("Shooter1 Temp",          shooterMotor.getMotorTemperature());
-        SmartDashboard.putNumber ("Shooter2 Temp",          shooterMotor2.getMotorTemperature());
+        
+        if (shooterMotor  != null) SmartDashboard.putNumber("Shooter1 Temp", shooterMotor.getMotorTemperature());
+        if (shooterMotor2 != null) SmartDashboard.putNumber("Shooter2 Temp", shooterMotor2.getMotorTemperature());
+
         //SmartDashboard.putNumber ("Shooter Current",        shooterMotor.getOutputCurrent());
         //SmartDashboard.putNumber ("Feeder Current",         feedMotor.getOutputCurrent());
  

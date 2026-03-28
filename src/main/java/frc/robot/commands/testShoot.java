@@ -19,7 +19,7 @@ public final class testShoot extends Command {
     private final SwerveSubsystem m_swerve;
 
     public testShoot(Shooter shooter, Intake intake, SwerveSubsystem swerve) {
-        addRequirements(shooter);
+        addRequirements(shooter,intake);
         this.m_shooter = shooter;
         this.m_intake  = intake;
         this.m_swerve  = swerve;

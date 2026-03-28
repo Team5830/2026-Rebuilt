@@ -23,7 +23,7 @@ public final class Shoot extends Command {
     private Command shootcmd;
 
     public Shoot(Shooter shooter, Intake intake, SwerveSubsystem swerve) {
-        addRequirements(shooter);
+        addRequirements(shooter,intake);
         this.m_shooter = shooter;
         this.m_intake  = intake;
         this.m_swerve  = swerve;
