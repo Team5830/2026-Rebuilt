@@ -435,8 +435,9 @@ public class Shooter extends SubsystemBase {
                 feedOn(),
                 gateOpen(),
                 new WaitCommand(1),
-                gateClosed()
-            ).finallyDo(() -> {
+                gateClosed(),
+                new WaitCommand(1)
+            ).repeatedly().finallyDo(() -> {
                 feedOff().schedule();
                 gateClosed().schedule();
                 shootOff().schedule();
