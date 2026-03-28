@@ -426,10 +426,9 @@ public class Shooter extends SubsystemBase {
      * Commands.defer() is used so that both branches and the shooterIsOn condition
      * are evaluated at schedule time, not at command-object construction time.
      */
-   public Command keysToTheKingdomToggle() {
+   public Command keysToTheKingdomToggle(Runnable onEnd) {
     return Commands.defer(
         () -> Commands.either(
-            // --- ON path: shooter is already running, fire the note ---
             new SequentialCommandGroup(
                 new WaitUntilCommand(this::shooterAtTargetSpeed).withTimeout(5),
                 feedOn(),
@@ -442,19 +441,19 @@ public class Shooter extends SubsystemBase {
                 gateClosed().schedule();
                 shootOff().schedule();
                 moveHood(0).schedule();
+                onEnd.run();  // caller-supplied cleanup
             }),
-            // --- OFF path: shut everything down ---
             new SequentialCommandGroup(
                 feedOff(),
                 gateClosed(),
                 shootOff(),
                 moveHood(0)
-            ),
+            ).finallyDo(interrupted -> onEnd.run()),
             () -> shooterIsOn
         ),
         Set.of(this)
-        );
-    }
+    );
+}
     // -------------------------------------------------------------------------
     // Telemetry
     // -------------------------------------------------------------------------
@@ -464,16 +463,16 @@ public class Shooter extends SubsystemBase {
         if (hoodEncoder    != null) SmartDashboard.putNumber("Hood",             hoodEncoder.getPosition());
         if (shooterEncoder != null) SmartDashboard.putNumber("Shooter Velocity", shooterEncoder.getVelocity());
  
-        SmartDashboard.putNumber ("Shooter Voltage",        aveFilt.calculate(shooterMotor.getAppliedOutput() * shooterMotor.getBusVoltage()));
+        //SmartDashboard.putNumber ("Shooter Voltage",        aveFilt.calculate(shooterMotor.getAppliedOutput() * shooterMotor.getBusVoltage()));
         SmartDashboard.putNumber ("Shooter1 Temp",          shooterMotor.getMotorTemperature());
         SmartDashboard.putNumber ("Shooter2 Temp",          shooterMotor2.getMotorTemperature());
-        SmartDashboard.putNumber ("Shooter Current",        shooterMotor.getOutputCurrent());
-        SmartDashboard.putNumber ("Feeder Current",         feedMotor.getOutputCurrent());
+        //SmartDashboard.putNumber ("Shooter Current",        shooterMotor.getOutputCurrent());
+        //SmartDashboard.putNumber ("Feeder Current",         feedMotor.getOutputCurrent());
  
         SmartDashboard.putBoolean("Shooter Is On",          shooterIsOn);
         SmartDashboard.putBoolean("Shooter Feed Is On",     feedIsOn);
         SmartDashboard.putBoolean("Shooter IntakeFeed On",  intakeFeedIsOn);
-        SmartDashboard.putBoolean("Shot Detected",          shotDetected());
-        SmartDashboard.putBoolean("Feed Fuel",              monitorFeed());
+        //SmartDashboard.putBoolean("Shot Detected",          shotDetected());
+        //SmartDashboard.putBoolean("Feed Fuel",              monitorFeed());
     }
 }

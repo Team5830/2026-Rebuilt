@@ -2,27 +2,21 @@ package frc.robot.commands;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.ConditionalCommand;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
-import frc.robot.Constants;
-import frc.robot.Constants.shooter;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.SwerveSubsystem;
 
 /**
- * One-shot command that configures shooter speed and hood angle based on the
- * current distance to hub, then toggles the shooter and feed.
+ * Test version of the shoot command — reads speed and hood angle from
+ * SmartDashboard instead of calculating from distance to hub.
  */
 public final class testShoot extends Command {
 
-    private final Shooter        m_shooter;
-    private final Intake         m_intake;
+    private final Shooter         m_shooter;
+    private final Intake          m_intake;
     private final SwerveSubsystem m_swerve;
-    private double shooterspeed, hoodangle;
 
     public testShoot(Shooter shooter, Intake intake, SwerveSubsystem swerve) {
         addRequirements(shooter);
@@ -33,30 +27,19 @@ public final class testShoot extends Command {
 
     @Override
     public void initialize() {
-        double distanceToHub = m_swerve.DistancetoHub();
-        // use as a toggle 
-        if((m_shooter.shooterIsOn)){
-            new SequentialCommandGroup(m_intake.FeedOff(), m_shooter.feedOff(), m_shooter.toggleShooter()).schedule();
-        }else{
-            System.out.println("DistanceToHub: " + distanceToHub);
-            SmartDashboard.putNumber("DistanceToHub", distanceToHub);
-            shooterspeed = SmartDashboard.getNumber("ShooterSpeed", 3500);
-            hoodangle = SmartDashboard.getNumber("HoodAngle", 0);
-            m_shooter.setShootSpeed(shooterspeed).schedule();
-            m_shooter.moveHood(hoodangle).schedule();
-            new SequentialCommandGroup(
-                m_shooter.toggleShooter(),
-                new WaitUntilCommand(m_shooter::shooterAtTargetSpeed).withTimeout(5.0),
-                new SequentialCommandGroup(
-                    m_shooter.feedOn(),
-                    m_shooter.keysToTheKingdomToggle(),
-                    new WaitCommand(0.5), 
-                    m_intake.FeedOff()) ).schedule();
-     }
+        double speed = SmartDashboard.getNumber("ShooterSpeed", 3500);
+        double angle = SmartDashboard.getNumber("HoodAngle", 0);
+
+        new SequentialCommandGroup(
+            m_shooter.setShootSpeed(speed),
+            m_shooter.moveHood(angle),
+            m_shooter.shootOn(),
+            new WaitUntilCommand(m_shooter::shooterAtTargetSpeed).withTimeout(5.0),
+            m_intake.FeedOn(),
+            m_shooter.keysToTheKingdomToggle(() -> m_intake.FeedOff().schedule())
+        ).schedule();
     }
 
     @Override
-    public boolean isFinished() {
-        return true; // One-shot: finishes after initialize()
-    }
+    public boolean isFinished() { return true; }
 }

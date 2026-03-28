@@ -172,8 +172,7 @@ public class RobotContainer {
     SmartDashboard.putData("Cancel Shooter", Commands.runOnce(() -> {}, m_Shooter));
     //SmartDashboard.putData("GateOpen", new InstantCommand(m_Shooter.GateOpen()));
     SmartDashboard.putData("GateReject", m_Shooter.gateRejectToggle());
-    SmartDashboard.putData("KeysKingdon",new SequentialCommandGroup(m_Shooter.toggleShooter(), m_Shooter.keysToTheKingdomToggle()));
-  
+    
     //Warm up Path following commands
     FollowPathCommand.warmupCommand();
     // Configure the trigger bindings

@@ -20,6 +20,7 @@ public final class Shoot extends Command {
     private final Shooter        m_shooter;
     private final Intake         m_intake;
     private final SwerveSubsystem m_swerve;
+    private Command shootcmd;
 
     public Shoot(Shooter shooter, Intake intake, SwerveSubsystem swerve) {
         addRequirements(shooter);
@@ -36,27 +37,22 @@ public final class Shoot extends Command {
         System.out.println("Set Shoot Speed: " + (distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC));
         System.out.println("moveHood: " + (distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC));
         // Configure speed and angle based on range, then toggle shooter + feed
-        if((m_shooter.shooterIsOn)){
-            new SequentialCommandGroup(m_intake.FeedOff(), m_shooter.feedOff(), m_shooter.shootOff()).schedule();
-        }else{
-           double speed = distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC;
-            double angle = distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC;
+        
+        double speed = distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC;
+        double angle = distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC;
 
-            new SequentialCommandGroup(
-                m_shooter.setShootSpeed(speed),
-                m_shooter.moveHood(angle),
-                m_shooter.shootOn(),
-                new WaitUntilCommand(m_shooter::shooterAtTargetSpeed).withTimeout(5.0),
-                m_intake.FeedOn(),
-                m_shooter.keysToTheKingdomToggle()
-            ).schedule();
+        shootcmd = new SequentialCommandGroup(
+        m_shooter.setShootSpeed(speed),
+        m_shooter.moveHood(angle),
+        m_shooter.shootOn(),
+        new WaitUntilCommand(m_shooter::shooterAtTargetSpeed).withTimeout(5.0),
+        m_intake.FeedOn(),
+        m_shooter.keysToTheKingdomToggle(() -> m_intake.FeedOff().schedule())
+    );
 
-            //m_shooter.FeedOn().
-     }
+    shootcmd.schedule();
     }
 
-    @Override
-    public boolean isFinished() {
-        return true; // One-shot: finishes after initialize()
-    }
+   @Override
+    public boolean isFinished() { return true; }
 }
