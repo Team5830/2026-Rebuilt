@@ -37,7 +37,7 @@ public final class Shoot extends Command {
         System.out.println("moveHood: " + (distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC));
         // Configure speed and angle based on range, then toggle shooter + feed
         if((m_shooter.shooterIsOn)){
-            new SequentialCommandGroup(m_intake.FeedOff(), m_shooter.FeedOff(), m_shooter.ShootOff()).schedule();
+            new SequentialCommandGroup(m_intake.FeedOff(), m_shooter.feedOff(), m_shooter.shootOff()).schedule();
         }else{
            double speed = distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC;
             double angle = distanceToHub * Constants.shooter.AngleB + Constants.shooter.AngleC;
@@ -45,12 +45,10 @@ public final class Shoot extends Command {
             new SequentialCommandGroup(
                 m_shooter.setShootSpeed(speed),
                 m_shooter.moveHood(angle),
-                m_shooter.ShootOn(),
+                m_shooter.shootOn(),
                 new WaitUntilCommand(m_shooter::shooterAtTargetSpeed).withTimeout(5.0),
-                m_shooter.FeedOn(),
-                new WaitCommand(0.5),
                 m_intake.FeedOn(),
-                m_shooter.KeysToTheKingdomtoggle()
+                m_shooter.keysToTheKingdomToggle()
             ).schedule();
 
             //m_shooter.FeedOn().

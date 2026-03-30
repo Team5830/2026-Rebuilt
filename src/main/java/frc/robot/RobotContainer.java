@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.Aim;
@@ -54,6 +55,7 @@ public class RobotContainer {
   private Intake m_intake   = new Intake();
   private Lights m_Lights = new Lights();
   Command driveCmd = null;
+  
 
   private CommandXboxController joystick1, xboxController;
   SwerveInputStream driveAngle;
@@ -71,7 +73,6 @@ public class RobotContainer {
     } catch (RuntimeException ex) {
       DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
     }
-    NamedCommands.registerCommand("TurnToTarget", new  Aim(m_swerve, driveAngle, m_Lights, joystick1));
     NamedCommands.registerCommand("ToggleShoot", new Shoot(m_Shooter, m_intake, m_swerve));
     NamedCommands.registerCommand("ToggleIntake", m_intake.toggleIntake());
     NamedCommands.registerCommand("ToggleHopper", m_hopper.toggleHopperCommand());
@@ -97,6 +98,8 @@ public class RobotContainer {
           .deadband(Constants.controller.DEADBAND)
           .scaleTranslation(0.95)
           .allianceRelativeControl(true);
+          
+    NamedCommands.registerCommand("TurnToTarget", new  Aim(m_swerve, driveAngle, m_Lights, joystick1).onlyWhile(()->Math.hypot(joystick1.getRawAxis(4), joystick1.getRawAxis(5)) < 0.1));
     driveChooser.setDefaultOption("FieldOrientedDrive",Boolean.TRUE);
     driveChooser.addOption("RobotOrientedDrive",Boolean.FALSE);
     driveChooser.onChange((selectedOption)->{
@@ -154,8 +157,8 @@ public class RobotContainer {
     SmartDashboard.putData("INTAKEtoggleFeed", m_intake.toggleFeedMode()); 
     SmartDashboard.putData("INTAKEtoggleIntake", m_intake.toggleIntake()); 
     SmartDashboard.putData("ShootertoggleFeed", m_Shooter.toggleFeed());
-    SmartDashboard.putData("ShooterFeedOn", m_Shooter.FeedOn());
-    SmartDashboard.putData("ShooterFeedOff", m_Shooter.FeedOff());
+    SmartDashboard.putData("ShooterFeedOn", m_Shooter.feedOn());
+    SmartDashboard.putData("ShooterFeedOff", m_Shooter.feedOff());
     SmartDashboard.putData("ShootertoggleInakeFeed", m_Shooter.toggleIntakeFeed());
     SmartDashboard.putData("ShootertoggleShooter", m_Shooter.toggleShooter());
     SmartDashboard.putData("INTAKE ON", m_intake.IntakeOn());
@@ -171,8 +174,8 @@ public class RobotContainer {
     SmartDashboard.putData("FireOne", new FireOne(m_Shooter));
     SmartDashboard.putData("Cancel Shooter", Commands.runOnce(() -> {}, m_Shooter));
     //SmartDashboard.putData("GateOpen", new InstantCommand(m_Shooter.GateOpen()));
-    SmartDashboard.putData("GateReject", m_Shooter.GateRejectToggle());
-    SmartDashboard.putData("KeysKingdon",new SequentialCommandGroup(m_Shooter.ShootOn(), m_Shooter.KeysToTheKingdomtoggle()));
+    SmartDashboard.putData("GateReject", m_Shooter.gateRejectToggle());
+    SmartDashboard.putData("KeysKingdon",new SequentialCommandGroup(m_Shooter.toggleShooter(), m_Shooter.keysToTheKingdomToggle()));
   
     //Warm up Path following commands
     FollowPathCommand.warmupCommand();
@@ -191,24 +194,31 @@ public class RobotContainer {
    */
   private void configureBindings() {
     /* Driver Controls Port 1 */
-    joystick1.b().onTrue(new Aim(m_swerve, driveAngle, m_Lights, joystick1));
+    joystick1.b().whileTrue(new Aim(m_swerve, driveAngle, m_Lights, joystick1));
     joystick1.back().onTrue( m_swerve.ToggleBrake());
-    joystick1.povLeft().onTrue(new AutoWaypoints(m_swerve, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
-    joystick1.povUp().onTrue(new AutoWaypoints(m_swerve, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
-    joystick1.povDown().onTrue(new AutoWaypoints(m_swerve, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
-    joystick1.povRight().onTrue(new AutoWaypoints(m_swerve, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
+    //joystick1.povLeft().onTrue(new AutoWaypoints(m_swerve, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
+    //joystick1.povUp().onTrue(new AutoWaypoints(m_swerve, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
+    //joystick1.povDown().onTrue(new AutoWaypoints(m_swerve, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
+    //joystick1.povRight().onTrue(new AutoWaypoints(m_swerve, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
     joystick1.start().onTrue(new InstantCommand(m_swerve::zeroGyro));
     
     /*Co-driver controls  Port 2 */
     // xboxController.povUp().onTrue( m_climber.Up());
     // xboxController.povDown().onTrue(m_climber.Down());
-    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(),m_Shooter.GateRejectToggle(), m_Lights.red()));
+    xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(),m_Shooter.gateRejectToggle(), m_Lights.red()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
-    xboxController.leftTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerve));
-    xboxController.x().onTrue(m_Lights.pink());
-    xboxController.povUp().onTrue(m_Shooter.adjustHoodup());
-    xboxController.povDown().onTrue(m_Shooter.adjustHooddown());
+    xboxController.leftTrigger().onTrue(new SequentialCommandGroup(new Shoot(m_Shooter, m_intake, m_swerve), m_Shooter.moveHood(0)));
+    xboxController.x().onTrue((new SequentialCommandGroup(m_intake.FeedOff(), m_Shooter.feedOff(), m_Shooter.shootOff())));
+    xboxController.povUp().onTrue(m_Shooter.adjustHoodUp());
+    xboxController.povDown().onTrue(m_Shooter.adjustHoodDown());
     xboxController.b().onTrue(m_intake.toggleReverseIntake());
+    xboxController.y().onTrue(new SequentialCommandGroup(
+                m_Shooter.setShootSpeed(3500),
+                m_Shooter.moveHood(30),
+                m_Shooter.shootOn(),
+                new WaitUntilCommand(m_Shooter::shooterAtTargetSpeed).withTimeout(5.0),
+                m_intake.FeedOn(),
+                m_Shooter.keysToTheKingdomToggle()).finallyDo(()-> m_Shooter.moveHood(0)));
     }
     
   /**
