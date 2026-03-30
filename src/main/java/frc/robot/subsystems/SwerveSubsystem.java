@@ -33,6 +33,7 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -324,6 +325,7 @@ public void periodic() {
     if (!RobotBase.isSimulation()) {
         vision.updatePoseEstimation(swerveDrive);
     }
+    SmartDashboard.putNumber("Distance To Hub: ", DistancetoHub());
 }
 
 public DriverStation.Alliance getAlliance() {

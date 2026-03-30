@@ -55,8 +55,6 @@ public class RobotContainer {
   private Intake m_intake   = new Intake();
   private Lights m_Lights = new Lights();
   Command driveCmd = null;
-  double distanceToHub = m_swerve.DistancetoHub();
-  double speed = distanceToHub * Constants.shooter.SpeedB + Constants.shooter.SpeedC;
   
 
   private CommandXboxController joystick1, xboxController;
@@ -198,10 +196,10 @@ public class RobotContainer {
     /* Driver Controls Port 1 */
     joystick1.b().whileTrue(new Aim(m_swerve, driveAngle, m_Lights, joystick1));
     joystick1.back().onTrue( m_swerve.ToggleBrake());
-    joystick1.povLeft().onTrue(new AutoWaypoints(m_swerve, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
-    joystick1.povUp().onTrue(new AutoWaypoints(m_swerve, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
-    joystick1.povDown().onTrue(new AutoWaypoints(m_swerve, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
-    joystick1.povRight().onTrue(new AutoWaypoints(m_swerve, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
+    //joystick1.povLeft().onTrue(new AutoWaypoints(m_swerve, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
+    //joystick1.povUp().onTrue(new AutoWaypoints(m_swerve, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
+    //joystick1.povDown().onTrue(new AutoWaypoints(m_swerve, new Pose2d(1.804,3.965,Rotation2d.fromDegrees(0))));
+    //joystick1.povRight().onTrue(new AutoWaypoints(m_swerve, new Pose2d(2.901,0.963,Rotation2d.fromDegrees(47.545))));
     joystick1.start().onTrue(new InstantCommand(m_swerve::zeroGyro));
     
     /*Co-driver controls  Port 2 */
@@ -210,13 +208,13 @@ public class RobotContainer {
     xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(),m_Shooter.gateRejectToggle(), m_Lights.red()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
     xboxController.leftTrigger().onTrue(new SequentialCommandGroup(new Shoot(m_Shooter, m_intake, m_swerve), m_Shooter.moveHood(0)));
-    xboxController.x().onTrue(m_Lights.pink());
+    xboxController.x().onTrue((new SequentialCommandGroup(m_intake.FeedOff(), m_Shooter.feedOff(), m_Shooter.shootOff())));
     xboxController.povUp().onTrue(m_Shooter.adjustHoodUp());
     xboxController.povDown().onTrue(m_Shooter.adjustHoodDown());
     xboxController.b().onTrue(m_intake.toggleReverseIntake());
     xboxController.y().onTrue(new SequentialCommandGroup(
                 m_Shooter.setShootSpeed(3500),
-                m_Shooter.moveHood(20),
+                m_Shooter.moveHood(30),
                 m_Shooter.shootOn(),
                 new WaitUntilCommand(m_Shooter::shooterAtTargetSpeed).withTimeout(5.0),
                 m_intake.FeedOn(),
