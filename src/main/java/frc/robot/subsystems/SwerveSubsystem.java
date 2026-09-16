@@ -100,9 +100,6 @@ public class SwerveSubsystem extends SubsystemBase {
                                                     Rotation2d.fromDegrees(0));
     }
 
-    
-  
-
     public SwerveSubsystem(SwerveDriveConfiguration driveCfg, SwerveControllerConfiguration controllerCfg) {
     swerveDrive =
         new SwerveDrive(

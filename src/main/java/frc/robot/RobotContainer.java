@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.Aim;
 import frc.robot.commands.AutoWaypoints;
 import frc.robot.commands.FireOne;
@@ -59,6 +60,7 @@ public class RobotContainer {
   final SendableChooser<Command> autoChooser;
   final SendableChooser<Boolean> driveChooser= new SendableChooser<>();
   boolean FieldOrientedDrive = false;
+  SwerveInputStream driveAngularVelocity;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -70,11 +72,11 @@ public class RobotContainer {
     } catch (RuntimeException ex) {
       DriverStation.reportError("Error instantiating Xboxcontroller: " + ex.getMessage(), true);
     }
-    NamedCommands.registerCommand("TurnToTarget", new  Aim(m_swerve, driveAngle, m_Lights, joystick1));
+    //NamedCommands.registerCommand("TurnToTarget", new  Aim(m_swerve, driveAngle, m_Lights, joystick1));
     NamedCommands.registerCommand("ToggleShoot", new Shoot(m_Shooter, m_intake, m_swerve));
     NamedCommands.registerCommand("ToggleIntake", m_intake.toggleIntake());
     NamedCommands.registerCommand("ToggleHopper", m_hopper.toggleHopperCommand());
-    SwerveInputStream driveAngularVelocity =
+    driveAngularVelocity =
       SwerveInputStream.of(
               m_swerve.getSwerveDrive(), () -> -joystick1.getRawAxis(1), () -> -joystick1.getRawAxis(0))
           .withControllerRotationAxis(() -> -joystick1.getRightX())
@@ -105,7 +107,8 @@ public class RobotContainer {
     Command driveFieldOrientedAngle = m_swerve.driveFieldOriented(driveAngle);
         m_swerve.setDefaultCommand(driveFieldOrientedAngle);
     // Autochooser must be setup after the named commands
-    autoChooser = AutoBuilder.buildAutoChooser("Auto1");
+    autoChooser = AutoBuilder.buildAutoChooser("simpletest");
+    /* 
     autoChooser.onChange((selectedOption) -> {
       // This code will be executed whenever the selected option changes
       PathPlannerAuto AutoPath = new PathPlannerAuto(selectedOption);
@@ -127,12 +130,13 @@ public class RobotContainer {
       }
       m_swerve.resetOdometry(startingPose);
     });
+    */
 
     
 
     SmartDashboard.putData("Auto Chooser", autoChooser);
     SmartDashboard.putData("Drive Chooser", driveChooser);
-    SmartDashboard.putData("Turn To Hub", new  Aim(m_swerve, driveAngle, m_Lights, joystick1));
+    //SmartDashboard.putData("Turn To Hub", new  Aim(m_swerve, driveAngularVelocity.copy(), m_Lights, joystick1));
     SmartDashboard.putData("drive",new AutoWaypoints(m_swerve,  new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     SmartDashboard.putData("Blue Lights",m_Lights.blue());
     SmartDashboard.putData("Lights off",m_Lights.off());
@@ -181,7 +185,12 @@ public class RobotContainer {
    */
   private void configureBindings() {
     /* Driver Controls Port 1 */
-    joystick1.b().onTrue(new Aim(m_swerve, driveAngle, m_Lights, joystick1));
+    //() ->joystick1.getRawAxis(4)*(m_swerve.isRedAlliance()?1:-1), () ->joystick1.getRawAxis(5)*(m_swerve.isRedAlliance()?1:-1)
+    joystick1.b().onTrue(new Aim(m_swerve, driveAngularVelocity.copy(), m_Lights,
+        () ->joystick1.getRawAxis(4)*(m_swerve.isRedAlliance()?1:-1), 
+        () ->joystick1.getRawAxis(5)*(m_swerve.isRedAlliance()?1:-1)));
+        //axis 4,5 on xbox?
+    //joystick1.b().onTrue(new Aim(m_swerve, driveAngle, m_Lights, joystick1));
     joystick1.back().onTrue( m_swerve.ToggleBrake());
     joystick1.povLeft().onTrue(new AutoWaypoints(m_swerve, new Pose2d(3.235,7.186,Rotation2d.fromDegrees(-78.024))));
     joystick1.povUp().onTrue(new AutoWaypoints(m_swerve, new Pose2d(2.847,4.019,Rotation2d.fromDegrees(0))));
