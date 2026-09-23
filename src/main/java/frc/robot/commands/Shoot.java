@@ -40,13 +40,14 @@ public final class Shoot extends Command {
         System.out.println("Set Shoot Speed: " + speed);
         System.out.println("moveHood: " + angle);
 
-        shootcmd = new SequentialCommandGroup(
-            m_shooter.setShootSpeed(speed),
-            m_shooter.moveHood(angle),
-            m_shooter.shootOn(),
-            new WaitUntilCommand(m_shooter::shooterAtTargetSpeed).withTimeout(5.0),
-            m_intake.FeedOn()
-        );
+ shootcmd = new SequentialCommandGroup(
+        m_shooter.setShootSpeed(speed),
+        m_shooter.moveHood(angle),
+        m_shooter.shootOn(),
+        new WaitUntilCommand(m_shooter::shooterAtTargetSpeed).withTimeout(5.0),
+        m_intake.FeedOn(),
+        m_shooter.keysToTheKingdomToggle(() -> m_intake.FeedOff().schedule())
+    );
 
         // Drive its lifecycle directly instead of scheduling it, since
         // scheduling would fight this command for the same requirements.
@@ -73,5 +74,7 @@ public final class Shoot extends Command {
         }
         m_shooter.shootOff().schedule();
         m_intake.FeedOff().schedule();
+        m_shooter.moveHood(0).schedule();
+        m_shooter.gateClosed().schedule();
     }
 }
