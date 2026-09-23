@@ -203,7 +203,7 @@ public class RobotContainer {
     // xboxController.povDown().onTrue(m_climber.Down());
     xboxController.rightTrigger().onTrue(new SequentialCommandGroup(m_intake.toggleIntake(), m_Shooter.toggleIntakeFeed(),m_Shooter.gateRejectToggle(), m_Lights.red()));
     xboxController.a().onTrue(m_hopper.toggleHopperCommand());
-    xboxController.leftTrigger().onTrue(new Shoot(m_Shooter, m_intake, m_swerve));
+    xboxController.leftTrigger().toggleOnTrue(new Shoot(m_Shooter, m_intake, m_swerve));
     xboxController.x().onTrue(m_Lights.pink());
     xboxController.povUp().onTrue(m_Shooter.adjustHoodUp());
     xboxController.povDown().onTrue(m_Shooter.adjustHoodDown());
